@@ -3,252 +3,328 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>動画アノテーター</title>
+<title>動画ドロー</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root {
-    --bg: #0f0f12;
-    --surface: #1a1a20;
-    --surface2: #24242e;
-    --accent: #6c63ff;
-    --accent2: #ff6584;
-    --text: #e8e8f0;
-    --text-dim: #7878a0;
-    --border: #2e2e3e;
-    --radius: 12px;
-  }
+:root {
+  --bg: #0f0f12;
+  --surface: #1a1a20;
+  --surface2: #24242e;
+  --accent: #6c63ff;
+  --accent2: #ff6584;
+  --text: #e8e8f0;
+  --text-dim: #7878a0;
+  --border: #2e2e3e;
+}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
+html, body {
+  height: 100%; height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
 
-  /* ── HEADER ── */
-  header {
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-    z-index: 10;
-  }
-  header h1 {
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-    color: var(--text);
-    flex: 1;
-  }
-  header h1 span { color: var(--accent); }
+/* ── HEADER ── */
+header {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+header h1 {
+  font-size: 15px;
+  font-weight: 700;
+  flex: 1;
+}
+header h1 span { color: var(--accent); }
 
-  #open-btn {
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-    -webkit-tap-highlight-color: transparent;
-  }
-  #file-input { display: none; }
+#open-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+#file-input { display: none; }
 
-  /* ── DROP ZONE ── */
-  #drop-zone {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    color: var(--text-dim);
-    padding: 32px;
-    text-align: center;
-  }
-  #drop-zone svg { opacity: 0.35; }
-  #drop-zone p { font-size: 15px; line-height: 1.6; }
-  #drop-zone small { font-size: 12px; color: var(--text-dim); opacity: 0.6; }
+/* ── DROP ZONE ── */
+#drop-zone {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--text-dim);
+  padding: 32px;
+  text-align: center;
+}
+#drop-zone svg { opacity: 0.35; }
+#drop-zone p { font-size: 15px; line-height: 1.6; }
+#drop-zone small { font-size: 12px; opacity: 0.5; }
 
-  /* ── WORKSPACE ── */
-  #workspace {
-    display: none;
-    flex: 1;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  #workspace.active { display: flex; }
+/* ── WORKSPACE ── */
+#workspace {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+#workspace.active { display: flex; }
 
-  /* ── CANVAS AREA ── */
-  #canvas-area {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
-    background: #000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+/* ── CANVAS AREA — takes remaining space, never overflow ── */
+#canvas-area {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
 
-  #video-el {
-    max-width: 100%;
-    max-height: 100%;
-    display: block;
-    pointer-events: none;
-    user-select: none;
-  }
+#video-el {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
 
-  #draw-canvas {
-    position: absolute;
-    top: 0; left: 0;
-    touch-action: none;
-    cursor: crosshair;
-  }
+#draw-canvas {
+  position: absolute;
+  touch-action: none;
+}
 
-  /* ── CONTROLS BAR ── */
-  #controls {
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    padding: 8px 12px;
-    flex-shrink: 0;
-  }
+/* draw-mode overlay hint */
+#draw-hint {
+  position: absolute;
+  top: 8px; left: 50%; transform: translateX(-50%);
+  background: rgba(108,99,255,0.85);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  white-space: nowrap;
+}
+#draw-hint.show { opacity: 1; }
 
-  /* Video controls */
-  #video-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
+/* ── BOTTOM PANEL — fixed height, never squished ── */
+#bottom-panel {
+  flex-shrink: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
 
-  .ctrl-btn {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 8px;
-    width: 40px; height: 40px;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
-    -webkit-tap-highlight-color: transparent;
-    font-size: 18px;
-    transition: background 0.15s;
-  }
-  .ctrl-btn:active { background: var(--accent); }
+/* ── TOOL BAR ── */
+#tool-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+#tool-bar::-webkit-scrollbar { display: none; }
 
-  #seek-bar {
-    flex: 1;
-    -webkit-appearance: none;
-    appearance: none;
-    height: 4px;
-    border-radius: 2px;
-    background: var(--border);
-    outline: none;
-    cursor: pointer;
-  }
-  #seek-bar::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 16px; height: 16px;
-    border-radius: 50%;
-    background: var(--accent);
-    cursor: pointer;
-  }
+/* Draw mode toggle */
+#draw-mode-btn {
+  flex-shrink: 0;
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 8px;
+  padding: 0 10px;
+  height: 36px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  letter-spacing: 0.02em;
+}
+#draw-mode-btn.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
 
-  #time-label {
-    font-size: 12px;
-    color: var(--text-dim);
-    white-space: nowrap;
-    min-width: 90px;
-    text-align: right;
-  }
+.tool-sep {
+  width: 1px;
+  height: 28px;
+  background: var(--border);
+  flex-shrink: 0;
+}
 
-  /* Drawing tools */
-  #tool-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
+.tool-group {
+  display: flex;
+  gap: 3px;
+  background: var(--surface2);
+  border-radius: 9px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
 
-  .tool-group {
-    display: flex;
-    gap: 4px;
-    background: var(--surface2);
-    border-radius: 10px;
-    padding: 4px;
-    border: 1px solid var(--border);
-  }
+.tool-btn {
+  width: 34px; height: 34px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.12s, color 0.12s;
+}
+.tool-btn.active { background: var(--accent); color: #fff; }
+.tool-btn:not(.active):active { background: var(--border); }
+.tool-btn:disabled { opacity: 0.3; pointer-events: none; }
 
-  .tool-btn {
-    width: 36px; height: 36px;
-    border: none;
-    border-radius: 7px;
-    background: transparent;
-    color: var(--text-dim);
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
-    -webkit-tap-highlight-color: transparent;
-    transition: background 0.15s, color 0.15s;
-    position: relative;
-  }
-  .tool-btn.active {
-    background: var(--accent);
-    color: #fff;
-  }
-  .tool-btn:not(.active):active { background: var(--border); }
+/* color swatch */
+#color-wrap { position: relative; flex-shrink: 0; }
+#color-btn {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  cursor: pointer;
+  display: block;
+  -webkit-tap-highlight-color: transparent;
+}
+#color-input { opacity: 0; width: 0; height: 0; position: absolute; }
 
-  /* Color picker */
-  #color-btn {
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    border: 3px solid var(--border);
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-  #color-input { opacity: 0; width: 0; height: 0; position: absolute; }
+/* size slider */
+.slider-wrap { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.label-sm { font-size: 10px; color: var(--text-dim); white-space: nowrap; }
+#size-slider {
+  width: 70px;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+}
+#size-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--text);
+  cursor: pointer;
+}
 
-  /* Size slider */
-  #size-slider {
-    width: 80px;
-    -webkit-appearance: none;
-    appearance: none;
-    height: 4px;
-    border-radius: 2px;
-    background: var(--border);
-    outline: none;
-    cursor: pointer;
-  }
-  #size-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 14px; height: 14px;
-    border-radius: 50%;
-    background: var(--text);
-    cursor: pointer;
-  }
+/* ── VIDEO CONTROLS ── */
+#video-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 7px;
+}
 
-  /* Clear / Undo buttons */
-  #undo-btn { font-size: 14px; }
-  #clear-btn { font-size: 13px; color: var(--accent2) !important; }
-  #clear-btn.active { background: var(--accent2) !important; color: #fff !important; }
+.ctrl-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  font-size: 16px;
+  transition: background 0.12s;
+}
+.ctrl-btn:active { background: var(--accent); }
 
-  /* opacity control */
-  .label-sm {
-    font-size: 11px;
-    color: var(--text-dim);
-    white-space: nowrap;
-  }
+#time-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  min-width: 84px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── FILM STRIP TIMELINE ── */
+#timeline-wrap {
+  flex: 1;
+  position: relative;
+  height: 38px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  cursor: grab;
+  user-select: none;
+}
+#timeline-wrap:active { cursor: grabbing; }
+
+#film-strip {
+  display: flex;
+  height: 100%;
+  position: absolute;
+  top: 0; left: 0;
+  will-change: transform;
+}
+
+.film-frame {
+  flex-shrink: 0;
+  width: 48px;
+  height: 38px;
+  background: #1a1a20;
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+  position: relative;
+}
+.film-frame canvas {
+  width: 100%; height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+/* playhead */
+#playhead {
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 50%;
+  width: 2px;
+  background: var(--accent);
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 2;
+}
+#playhead::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid var(--accent);
+}
 </style>
 </head>
 <body>
@@ -259,340 +335,295 @@
   <input type="file" id="file-input" accept="video/*">
 </header>
 
-<!-- Drop Zone -->
 <div id="drop-zone">
-  <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+  <svg width="64" height="64" viewBox="0 0 72 72" fill="none">
     <rect x="8" y="14" width="56" height="44" rx="6" stroke="#6c63ff" stroke-width="3"/>
     <circle cx="26" cy="30" r="5" stroke="#6c63ff" stroke-width="2.5"/>
     <path d="M8 46l14-12 10 9 12-14 20 17" stroke="#6c63ff" stroke-width="2.5" stroke-linejoin="round"/>
     <path d="M36 36v-16M29 26l7-7 7 7" stroke="#ff6584" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>
-  <p>「動画を開く」ボタンで<br>動画ファイルを選択してください</p>
+  <p>「動画を開く」で<br>動画ファイルを選択してください</p>
   <small>MP4 / MOV / WebM など対応</small>
 </div>
 
-<!-- Workspace -->
 <div id="workspace">
 
-  <!-- Canvas area -->
   <div id="canvas-area">
     <video id="video-el" playsinline></video>
     <canvas id="draw-canvas"></canvas>
+    <div id="draw-hint">✏️ 描画モード ON</div>
   </div>
 
-  <!-- Controls -->
-  <div id="controls">
+  <div id="bottom-panel">
 
-    <!-- Video controls row -->
-    <div id="video-controls">
-      <button class="ctrl-btn" id="play-btn" title="再生/一時停止">▶</button>
-      <input type="range" id="seek-bar" min="0" max="1000" value="0" step="1">
-      <span id="time-label">0:00 / 0:00</span>
-    </div>
-
-    <!-- Tool bar row -->
+    <!-- Tool bar -->
     <div id="tool-bar">
 
-      <!-- Tools -->
-      <div class="tool-group">
-        <button class="tool-btn active" id="tool-pen"   data-tool="pen"   title="ペン">✏️</button>
-        <button class="tool-btn"        id="tool-line"  data-tool="line"  title="直線">╱</button>
-        <button class="tool-btn"        id="tool-rect"  data-tool="rect"  title="矩形">▭</button>
-        <button class="tool-btn"        id="tool-circle"data-tool="circle"title="円">○</button>
-        <button class="tool-btn"        id="tool-arrow" data-tool="arrow" title="矢印">➔</button>
-        <button class="tool-btn"        id="tool-eraser"data-tool="eraser"title="消しゴム">🧹</button>
+      <button id="draw-mode-btn">✏️ 描画OFF</button>
+      <div class="tool-sep"></div>
+
+      <div class="tool-group" id="shape-tools">
+        <button class="tool-btn active" data-tool="pen"    title="ペン">✏️</button>
+        <button class="tool-btn"        data-tool="line"   title="直線">╱</button>
+        <button class="tool-btn"        data-tool="rect"   title="矩形">▭</button>
+        <button class="tool-btn"        data-tool="circle" title="円">○</button>
+        <button class="tool-btn"        data-tool="arrow"  title="矢印">➔</button>
+        <button class="tool-btn"        data-tool="eraser" title="消しゴム">🧹</button>
       </div>
 
-      <!-- Color -->
-      <div style="position:relative;display:flex;align-items:center;">
-        <button id="color-btn" title="色を変える" style="background:#6c63ff;"></button>
+      <div id="color-wrap">
+        <button id="color-btn" style="background:#6c63ff;" title="色"></button>
         <input type="color" id="color-input" value="#6c63ff">
       </div>
 
-      <!-- Size -->
-      <div style="display:flex;align-items:center;gap:6px;">
+      <div class="slider-wrap">
         <span class="label-sm">太さ</span>
         <input type="range" id="size-slider" min="1" max="30" value="4">
       </div>
 
-      <!-- Undo / Clear -->
+      <div class="tool-sep"></div>
+
       <div class="tool-group">
-        <button class="tool-btn" id="undo-btn" title="元に戻す">↩</button>
-        <button class="tool-btn" id="clear-btn" title="全消去">✕</button>
+        <button class="tool-btn" id="undo-btn" title="元に戻す" style="font-size:14px;">↩</button>
+        <button class="tool-btn" id="clear-btn" title="全消去" style="font-size:12px;color:#ff6584;">✕</button>
       </div>
 
     </div>
+
+    <!-- Video controls -->
+    <div id="video-controls">
+      <button class="ctrl-btn" id="play-btn">▶</button>
+
+      <div id="timeline-wrap">
+        <div id="film-strip"></div>
+        <div id="playhead"></div>
+      </div>
+
+      <span id="time-label">0:00 / 0:00</span>
+    </div>
+
   </div>
 </div>
 
 <script>
-// ─── State ───────────────────────────────────────────────
+// ─── State ───────────────────────────────────────────────────────────
 const state = {
   tool: 'pen',
   color: '#6c63ff',
   lineWidth: 4,
+  drawMode: false,
   drawing: false,
   startX: 0, startY: 0,
-  strokes: [],       // committed strokes
-  currentStroke: [], // live pen points
-  snapshot: null,    // for shape preview
+  strokes: [],
+  currentStroke: [],
+  snapshot: null,
 };
 
-// ─── Elements ────────────────────────────────────────────
-const fileInput   = document.getElementById('file-input');
-const videoEl     = document.getElementById('video-el');
-const canvas      = document.getElementById('draw-canvas');
-const ctx         = canvas.getContext('2d');
-const workspace   = document.getElementById('workspace');
-const dropZone    = document.getElementById('drop-zone');
-const canvasArea  = document.getElementById('canvas-area');
-const playBtn     = document.getElementById('play-btn');
-const seekBar     = document.getElementById('seek-bar');
-const timeLabel   = document.getElementById('time-label');
-const colorBtn    = document.getElementById('color-btn');
-const colorInput  = document.getElementById('color-input');
-const sizeSlider  = document.getElementById('size-slider');
-const undoBtn     = document.getElementById('undo-btn');
-const clearBtn    = document.getElementById('clear-btn');
+// ─── Elements ────────────────────────────────────────────────────────
+const fileInput     = document.getElementById('file-input');
+const videoEl       = document.getElementById('video-el');
+const canvas        = document.getElementById('draw-canvas');
+const ctx           = canvas.getContext('2d');
+const workspace     = document.getElementById('workspace');
+const dropZone      = document.getElementById('drop-zone');
+const canvasArea    = document.getElementById('canvas-area');
+const playBtn       = document.getElementById('play-btn');
+const timeLabel     = document.getElementById('time-label');
+const colorBtn      = document.getElementById('color-btn');
+const colorInput    = document.getElementById('color-input');
+const sizeSlider    = document.getElementById('size-slider');
+const undoBtn       = document.getElementById('undo-btn');
+const clearBtn      = document.getElementById('clear-btn');
+const drawModeBtn   = document.getElementById('draw-mode-btn');
+const drawHint      = document.getElementById('draw-hint');
+const filmStrip     = document.getElementById('film-strip');
+const timelineWrap  = document.getElementById('timeline-wrap');
 
-// ─── File loading ─────────────────────────────────────────
+// ─── File ────────────────────────────────────────────────────────────
 fileInput.addEventListener('change', e => {
   const file = e.target.files[0];
   if (!file) return;
-  const url = URL.createObjectURL(file);
-  videoEl.src = url;
+  videoEl.src = URL.createObjectURL(file);
   videoEl.load();
   dropZone.style.display = 'none';
   workspace.classList.add('active');
 });
 
-// ─── Video events ─────────────────────────────────────────
+// ─── Video events ────────────────────────────────────────────────────
 videoEl.addEventListener('loadedmetadata', () => {
   resizeCanvas();
+  buildFilmStrip();
 });
-
-videoEl.addEventListener('timeupdate', () => {
-  if (!videoEl.duration) return;
-  seekBar.value = (videoEl.currentTime / videoEl.duration * 1000) | 0;
-  timeLabel.textContent = fmt(videoEl.currentTime) + ' / ' + fmt(videoEl.duration);
-});
-
+videoEl.addEventListener('timeupdate', updateTimeline);
 videoEl.addEventListener('play',  () => playBtn.textContent = '⏸');
 videoEl.addEventListener('pause', () => playBtn.textContent = '▶');
 videoEl.addEventListener('ended', () => playBtn.textContent = '▶');
 
-playBtn.addEventListener('click', () => {
-  videoEl.paused ? videoEl.play() : videoEl.pause();
-});
-
-seekBar.addEventListener('input', () => {
-  if (!videoEl.duration) return;
-  videoEl.currentTime = videoEl.duration * seekBar.value / 1000;
-});
+playBtn.addEventListener('click', () => videoEl.paused ? videoEl.play() : videoEl.pause());
 
 function fmt(s) {
+  if (!isFinite(s)) return '0:00';
   const m = Math.floor(s / 60), sec = Math.floor(s % 60);
   return `${m}:${String(sec).padStart(2,'0')}`;
 }
 
-// ─── Canvas resize ────────────────────────────────────────
-const ro = new ResizeObserver(resizeCanvas);
+// ─── Canvas resize ───────────────────────────────────────────────────
+const ro = new ResizeObserver(() => resizeCanvas());
 ro.observe(canvasArea);
 ro.observe(videoEl);
 
 function resizeCanvas() {
-  const rect = videoEl.getBoundingClientRect();
-  if (!rect.width || !rect.height) return;
-  // Save current drawing
-  const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  canvas.width  = rect.width;
-  canvas.height = rect.height;
-  canvas.style.width  = rect.width  + 'px';
-  canvas.style.height = rect.height + 'px';
-  canvas.style.left   = rect.left - canvasArea.getBoundingClientRect().left + 'px';
-  canvas.style.top    = rect.top  - canvasArea.getBoundingClientRect().top  + 'px';
+  const vr = videoEl.getBoundingClientRect();
+  const ar = canvasArea.getBoundingClientRect();
+  if (!vr.width || !vr.height) return;
+  canvas.width  = vr.width;
+  canvas.height = vr.height;
+  canvas.style.width  = vr.width  + 'px';
+  canvas.style.height = vr.height + 'px';
+  canvas.style.left   = (vr.left - ar.left) + 'px';
+  canvas.style.top    = (vr.top  - ar.top)  + 'px';
   redrawAll();
 }
 
-// ─── Color / size ─────────────────────────────────────────
+// ─── Draw mode toggle ────────────────────────────────────────────────
+drawModeBtn.addEventListener('click', () => {
+  state.drawMode = !state.drawMode;
+  drawModeBtn.textContent = state.drawMode ? '✏️ 描画ON' : '✏️ 描画OFF';
+  drawModeBtn.classList.toggle('on', state.drawMode);
+  canvas.style.cursor = state.drawMode ? (state.tool === 'eraser' ? 'cell' : 'crosshair') : 'default';
+  canvas.style.pointerEvents = state.drawMode ? 'auto' : 'none';
+  // hint
+  drawHint.classList.toggle('show', state.drawMode);
+  if (state.drawMode) setTimeout(() => drawHint.classList.remove('show'), 1500);
+});
+
+// initialize: canvas passes pointer to video area when draw mode off
+canvas.style.pointerEvents = 'none';
+
+// ─── Color / Size ────────────────────────────────────────────────────
 colorBtn.addEventListener('click', () => colorInput.click());
 colorInput.addEventListener('input', e => {
   state.color = e.target.value;
   colorBtn.style.background = state.color;
 });
-sizeSlider.addEventListener('input', e => {
-  state.lineWidth = +e.target.value;
-});
+sizeSlider.addEventListener('input', e => state.lineWidth = +e.target.value);
 
-// ─── Tool selection ───────────────────────────────────────
+// ─── Tool selection ──────────────────────────────────────────────────
 document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tool-btn[data-tool]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     state.tool = btn.dataset.tool;
-    canvas.style.cursor = state.tool === 'eraser' ? 'cell' : 'crosshair';
+    if (state.drawMode) canvas.style.cursor = state.tool === 'eraser' ? 'cell' : 'crosshair';
   });
 });
 
-// ─── Undo / Clear ─────────────────────────────────────────
-undoBtn.addEventListener('click', () => {
-  state.strokes.pop();
-  redrawAll();
-});
-clearBtn.addEventListener('click', () => {
-  state.strokes = [];
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-});
+// ─── Undo / Clear ────────────────────────────────────────────────────
+undoBtn.addEventListener('click', () => { state.strokes.pop(); redrawAll(); });
+clearBtn.addEventListener('click', () => { state.strokes = []; ctx.clearRect(0,0,canvas.width,canvas.height); });
 
-// ─── Pointer helpers ──────────────────────────────────────
+// ─── Drawing ─────────────────────────────────────────────────────────
 function getPos(e) {
   const rect = canvas.getBoundingClientRect();
   const src = e.touches ? e.touches[0] : e;
-  return {
-    x: src.clientX - rect.left,
-    y: src.clientY - rect.top,
-  };
+  return { x: src.clientX - rect.left, y: src.clientY - rect.top };
 }
 
-// ─── Drawing ──────────────────────────────────────────────
-canvas.addEventListener('pointerdown', startDraw);
-canvas.addEventListener('pointermove', moveDraw);
-canvas.addEventListener('pointerup',   endDraw);
-canvas.addEventListener('pointerleave',endDraw);
-canvas.addEventListener('touchstart',  e => e.preventDefault(), { passive: false });
-canvas.addEventListener('touchmove',   e => e.preventDefault(), { passive: false });
-
-function startDraw(e) {
+canvas.addEventListener('pointerdown', e => {
+  if (!state.drawMode) return;
   e.preventDefault();
   const { x, y } = getPos(e);
   state.drawing = true;
-  state.startX = x;
-  state.startY = y;
+  state.startX = x; state.startY = y;
   state.currentStroke = [{ x, y }];
-  if (state.tool !== 'pen' && state.tool !== 'eraser') {
+  if (state.tool !== 'pen' && state.tool !== 'eraser')
     state.snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  }
-}
+});
 
-function moveDraw(e) {
+canvas.addEventListener('pointermove', e => {
   if (!state.drawing) return;
   e.preventDefault();
   const { x, y } = getPos(e);
-
   if (state.tool === 'pen') {
-    drawPenSegment(state.currentStroke[state.currentStroke.length - 1], {x,y});
-    state.currentStroke.push({ x, y });
+    drawPenSegment(state.currentStroke[state.currentStroke.length-1], {x,y});
+    state.currentStroke.push({x,y});
   } else if (state.tool === 'eraser') {
     eraseAt(x, y);
-    state.currentStroke.push({ x, y });
+    state.currentStroke.push({x,y});
   } else {
-    // Shape preview
     ctx.putImageData(state.snapshot, 0, 0);
-    drawShape(state.tool, state.startX, state.startY, x, y, state.color, state.lineWidth, false);
+    drawShape(state.tool, state.startX, state.startY, x, y, state.color, state.lineWidth);
   }
-}
+});
+
+canvas.addEventListener('pointerup', endDraw);
+canvas.addEventListener('pointerleave', endDraw);
+canvas.addEventListener('touchstart', e => { if (state.drawMode) e.preventDefault(); }, { passive: false });
+canvas.addEventListener('touchmove',  e => { if (state.drawMode) e.preventDefault(); }, { passive: false });
 
 function endDraw(e) {
   if (!state.drawing) return;
   state.drawing = false;
-  const p = e.changedTouches ? e.changedTouches[0] : e;
+  const src = e.changedTouches ? e.changedTouches[0] : e;
   const rect = canvas.getBoundingClientRect();
-  const x = p.clientX - rect.left;
-  const y = p.clientY - rect.top;
-
+  const x = src.clientX - rect.left, y = src.clientY - rect.top;
   if (state.tool === 'pen' || state.tool === 'eraser') {
-    state.strokes.push({
-      type: state.tool,
-      points: [...state.currentStroke],
-      color: state.color,
-      lineWidth: state.lineWidth,
-    });
+    state.strokes.push({ type: state.tool, points: [...state.currentStroke], color: state.color, lineWidth: state.lineWidth });
   } else {
-    state.strokes.push({
-      type: 'shape',
-      shape: state.tool,
-      x1: state.startX, y1: state.startY,
-      x2: x, y2: y,
-      color: state.color,
-      lineWidth: state.lineWidth,
-    });
+    state.strokes.push({ type:'shape', shape:state.tool, x1:state.startX, y1:state.startY, x2:x, y2:y, color:state.color, lineWidth:state.lineWidth });
   }
 }
 
-// ─── Draw helpers ─────────────────────────────────────────
+// ─── Draw helpers ────────────────────────────────────────────────────
 function setupCtx(color, lw) {
-  ctx.strokeStyle = color;
-  ctx.lineWidth   = lw;
-  ctx.lineCap     = 'round';
-  ctx.lineJoin    = 'round';
+  ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
 }
-
 function drawPenSegment(from, to) {
   setupCtx(state.color, state.lineWidth);
   ctx.globalCompositeOperation = 'source-over';
-  ctx.beginPath();
-  ctx.moveTo(from.x, from.y);
-  ctx.lineTo(to.x, to.y);
-  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(to.x, to.y); ctx.stroke();
 }
-
 function eraseAt(x, y) {
   const r = state.lineWidth * 4;
   ctx.globalCompositeOperation = 'destination-out';
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
   ctx.globalCompositeOperation = 'source-over';
 }
-
 function drawShape(shape, x1, y1, x2, y2, color, lw) {
   ctx.globalCompositeOperation = 'source-over';
   setupCtx(color, lw);
   ctx.beginPath();
   if (shape === 'line') {
-    ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
   } else if (shape === 'rect') {
-    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+    ctx.strokeRect(x1,y1,x2-x1,y2-y1);
   } else if (shape === 'circle') {
-    const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
-    const rx = Math.abs(x2 - x1) / 2, ry = Math.abs(y2 - y1) / 2;
-    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-    ctx.stroke();
+    const cx=(x1+x2)/2, cy=(y1+y2)/2, rx=Math.abs(x2-x1)/2, ry=Math.abs(y2-y1)/2;
+    ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.stroke();
   } else if (shape === 'arrow') {
-    drawArrow(x1, y1, x2, y2, lw);
+    const angle = Math.atan2(y2-y1,x2-x1), h = Math.max(lw*5,16);
+    ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-h*Math.cos(angle-0.4), y2-h*Math.sin(angle-0.4));
+    ctx.lineTo(x2-h*Math.cos(angle+0.4), y2-h*Math.sin(angle+0.4));
+    ctx.closePath(); ctx.fillStyle = color; ctx.fill();
   }
 }
-
-function drawArrow(x1, y1, x2, y2, lw) {
-  const angle = Math.atan2(y2 - y1, x2 - x1);
-  const headLen = Math.max(lw * 5, 16);
-  ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(x2, y2);
-  ctx.lineTo(x2 - headLen * Math.cos(angle - 0.4), y2 - headLen * Math.sin(angle - 0.4));
-  ctx.lineTo(x2 - headLen * Math.cos(angle + 0.4), y2 - headLen * Math.sin(angle + 0.4));
-  ctx.closePath();
-  ctx.fillStyle = ctx.strokeStyle;
-  ctx.fill();
-}
-
 function redrawAll() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
   for (const s of state.strokes) {
     if (s.type === 'pen') {
       if (s.points.length < 2) continue;
       setupCtx(s.color, s.lineWidth);
       ctx.globalCompositeOperation = 'source-over';
-      ctx.beginPath();
-      ctx.moveTo(s.points[0].x, s.points[0].y);
-      for (let i = 1; i < s.points.length; i++) ctx.lineTo(s.points[i].x, s.points[i].y);
+      ctx.beginPath(); ctx.moveTo(s.points[0].x, s.points[0].y);
+      for (let i=1; i<s.points.length; i++) ctx.lineTo(s.points[i].x, s.points[i].y);
       ctx.stroke();
     } else if (s.type === 'eraser') {
       for (const p of s.points) {
         ctx.globalCompositeOperation = 'destination-out';
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, s.lineWidth * 4, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(p.x, p.y, s.lineWidth*4, 0, Math.PI*2); ctx.fill();
       }
       ctx.globalCompositeOperation = 'source-over';
     } else if (s.type === 'shape') {
@@ -600,6 +631,125 @@ function redrawAll() {
     }
   }
 }
+
+// ─── Film Strip Timeline ──────────────────────────────────────────────
+const FRAME_W = 48;   // px per frame
+const FRAME_H = 38;
+const TOTAL_FRAMES = 30;  // number of thumbnails
+
+let filmBuilt = false;
+let filmFrameEls = [];
+
+function buildFilmStrip() {
+  if (filmBuilt) return;
+  filmBuilt = true;
+  filmStrip.innerHTML = '';
+  filmFrameEls = [];
+
+  for (let i = 0; i < TOTAL_FRAMES; i++) {
+    const div = document.createElement('div');
+    div.className = 'film-frame';
+    const c = document.createElement('canvas');
+    c.width = FRAME_W; c.height = FRAME_H;
+    div.appendChild(c);
+    filmStrip.appendChild(div);
+    filmFrameEls.push(c);
+  }
+
+  // filmStrip total width
+  filmStrip.style.width = (FRAME_W * TOTAL_FRAMES) + 'px';
+
+  // Capture frames sequentially
+  captureFrames();
+}
+
+async function captureFrames() {
+  const dur = videoEl.duration;
+  if (!isFinite(dur) || dur === 0) return;
+
+  const offscreenVideo = document.createElement('video');
+  offscreenVideo.src = videoEl.src;
+  offscreenVideo.muted = true;
+  offscreenVideo.preload = 'auto';
+
+  await new Promise(r => { offscreenVideo.addEventListener('loadedmetadata', r, {once:true}); offscreenVideo.load(); });
+
+  for (let i = 0; i < TOTAL_FRAMES; i++) {
+    const t = (i / (TOTAL_FRAMES - 1)) * dur;
+    offscreenVideo.currentTime = t;
+    await new Promise(r => offscreenVideo.addEventListener('seeked', r, {once:true}));
+
+    const c = filmFrameEls[i];
+    const cx = c.getContext('2d');
+    // letterbox draw
+    const vw = offscreenVideo.videoWidth, vh = offscreenVideo.videoHeight;
+    const scale = Math.min(FRAME_W/vw, FRAME_H/vh);
+    const dw = vw*scale, dh = vh*scale;
+    const dx = (FRAME_W-dw)/2, dy = (FRAME_H-dh)/2;
+    cx.fillStyle = '#111';
+    cx.fillRect(0,0,FRAME_W,FRAME_H);
+    cx.drawImage(offscreenVideo, dx, dy, dw, dh);
+  }
+}
+
+// ─── Timeline scrub ──────────────────────────────────────────────────
+// Center of timelineWrap = current time (playhead is fixed center)
+// Scrolling the filmStrip left/right changes currentTime
+
+let tlDragging = false;
+let tlStartX = 0;
+let tlStartTime = 0;
+let tlAnimFrame = null;
+
+function timeToStripOffset(t) {
+  // offset of filmStrip left edge so that time t is at center
+  const dur = videoEl.duration || 1;
+  const totalW = FRAME_W * TOTAL_FRAMES;
+  const centerX = t / dur * totalW;
+  const wrapW = timelineWrap.getBoundingClientRect().width || 200;
+  return -(centerX - wrapW / 2);
+}
+
+function updateTimeline() {
+  const t = videoEl.currentTime;
+  const dur = videoEl.duration || 1;
+  timeLabel.textContent = fmt(t) + ' / ' + fmt(dur);
+  if (!tlDragging) {
+    filmStrip.style.transform = `translateX(${timeToStripOffset(t)}px)`;
+  }
+}
+
+function tlGetX(e) {
+  return e.touches ? e.touches[0].clientX : e.clientX;
+}
+
+timelineWrap.addEventListener('pointerdown', e => {
+  tlDragging = true;
+  tlStartX = tlGetX(e);
+  tlStartTime = videoEl.currentTime;
+  timelineWrap.setPointerCapture(e.pointerId);
+  videoEl.pause();
+  e.preventDefault();
+});
+
+timelineWrap.addEventListener('pointermove', e => {
+  if (!tlDragging) return;
+  const dx = tlGetX(e) - tlStartX; // pixels dragged
+  const dur = videoEl.duration || 1;
+  const totalW = FRAME_W * TOTAL_FRAMES;
+  // dx px / totalW px * dur seconds
+  const dt = -(dx / totalW) * dur;
+  const newTime = Math.max(0, Math.min(dur, tlStartTime + dt));
+  videoEl.currentTime = newTime;
+  // move strip visually immediately
+  filmStrip.style.transform = `translateX(${timeToStripOffset(newTime)}px)`;
+  timeLabel.textContent = fmt(newTime) + ' / ' + fmt(dur);
+});
+
+timelineWrap.addEventListener('pointerup',    () => { tlDragging = false; });
+timelineWrap.addEventListener('pointerleave', () => { tlDragging = false; });
+timelineWrap.addEventListener('touchstart',   e => e.preventDefault(), { passive: false });
+timelineWrap.addEventListener('touchmove',    e => e.preventDefault(), { passive: false });
 </script>
 </body>
 </html>
