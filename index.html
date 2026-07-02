@@ -456,9 +456,11 @@ fileInput.addEventListener('change', async e => {
   const id = Date.now().toString();
   const name = file.name.replace(/\.[^.]+$/, '');
   const project = { id, name, objects:[], color:'#6c63ff', lineWidth:4, updatedAt: Date.now() };
+  // Save both records and wait for completion before opening
   await dbPut('projects', project);
   await dbPut('videos', { id, blob: file });
-  openProject(id);
+  // Open directly with the file we already have (skip re-fetching from DB)
+  openProjectWithData(project, file);
 });
 
 // ══════════════════════════════════════════════════════════
@@ -468,11 +470,15 @@ let videoBlob = null;
 let filmBuilt = false, filmFrameEls = [];
 
 async function openProject(id) {
-  currentProjectId = id;
-  filmBuilt = false;
   const project = await dbGet('projects', id);
   const videoRec = await dbGet('videos', id);
   if (!project || !videoRec) { alert('データが見つかりません'); return; }
+  openProjectWithData(project, videoRec.blob);
+}
+
+function openProjectWithData(project, blob) {
+  currentProjectId = project.id;
+  filmBuilt = false;
 
   // restore state
   S.objects = project.objects || [];
@@ -485,8 +491,8 @@ async function openProject(id) {
   nextId = (S.objects.reduce((m,o)=>Math.max(m,o.id),0) || 0) + 1;
 
   projectNameIn.value = project.name || '';
-  videoBlob = videoRec.blob;
-  videoEl.src = URL.createObjectURL(videoBlob);
+  videoBlob = blob;
+  videoEl.src = URL.createObjectURL(blob);
   videoEl.load();
 
   homeScreen.classList.remove('active');
