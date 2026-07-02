@@ -5,368 +5,244 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>動画ドロー</title>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root {
-  --bg: #0f0f12;
-  --surface: #1a1a20;
-  --surface2: #24242e;
-  --accent: #6c63ff;
-  --accent2: #ff6584;
-  --text: #e8e8f0;
-  --text-dim: #7878a0;
-  --border: #2e2e3e;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f12;--surface:#1a1a20;--surface2:#24242e;
+  --accent:#6c63ff;--accent2:#ff6584;--text:#e8e8f0;
+  --text-dim:#7878a0;--border:#2e2e3e;--green:#4caf82;
 }
+html,body{height:100%;height:100dvh;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;
+  overflow:hidden;display:flex;flex-direction:column;}
 
-html, body {
-  height: 100%; height: 100dvh;
-  background: var(--bg);
-  color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
+/* ══ SCREENS ══ */
+.screen{display:none;flex:1;flex-direction:column;min-height:0;}
+.screen.active{display:flex;}
+
+/* ══ HOME ══ */
+#home-header{
+  padding:14px 16px;display:flex;align-items:center;gap:10px;
+  background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;
 }
-
-header {
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+#home-header h1{font-size:17px;font-weight:800;flex:1;}
+#home-header h1 span{color:var(--accent);}
+#new-project-btn{
+  background:var(--accent);color:#fff;border:none;border-radius:9px;
+  padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;
 }
-header h1 { font-size: 15px; font-weight: 700; flex: 1; }
-header h1 span { color: var(--accent); }
+#file-input{display:none;}
 
-#open-btn {
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 7px 14px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
+#project-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;display:flex;flex-direction:column;gap:12px;}
+
+#empty-state{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;color:var(--text-dim);text-align:center;padding:32px;
 }
-#file-input { display: none; }
+#empty-state svg{opacity:0.3;}
+#empty-state p{font-size:15px;line-height:1.6;}
 
-#drop-zone {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  color: var(--text-dim);
-  padding: 32px;
-  text-align: center;
+.project-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  overflow:hidden;cursor:pointer;display:flex;align-items:stretch;
+  transition:border-color 0.15s;
+  -webkit-tap-highlight-color:transparent;
 }
-#drop-zone svg { opacity: 0.35; }
-#drop-zone p { font-size: 15px; line-height: 1.6; }
-#drop-zone small { font-size: 12px; opacity: 0.5; }
-
-#workspace {
-  display: none;
-  flex: 1;
-  flex-direction: column;
-  min-height: 0;
+.project-card:active{border-color:var(--accent);}
+.card-thumb{
+  width:90px;flex-shrink:0;background:#000;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
 }
-#workspace.active { display: flex; }
-
-#canvas-area {
-  flex: 1;
-  min-height: 0;
-  position: relative;
-  background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+.card-thumb video,.card-thumb img{width:100%;height:100%;object-fit:cover;}
+.card-thumb .no-thumb{font-size:28px;}
+.card-body{flex:1;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0;}
+.card-name{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.card-meta{font-size:11px;color:var(--text-dim);}
+.card-actions{display:flex;flex-direction:column;justify-content:center;gap:8px;padding:10px 12px;flex-shrink:0;}
+.card-del-btn{
+  background:none;border:1px solid var(--border);color:var(--accent2);
+  border-radius:7px;padding:5px 10px;font-size:12px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
 }
 
-#video-el {
-  max-width: 100%;
-  max-height: 100%;
-  display: block;
-  pointer-events: none;
-  user-select: none;
+/* ══ EDITOR HEADER ══ */
+#editor-header{
+  padding:8px 12px;display:flex;align-items:center;gap:10px;
+  background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;
+}
+#back-btn{
+  background:var(--surface2);border:1px solid var(--border);color:var(--text);
+  border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;flex-shrink:0;
+}
+#project-name-input{
+  flex:1;background:transparent;border:none;border-bottom:1px solid var(--border);
+  color:var(--text);font-size:14px;font-weight:700;padding:4px 0;outline:none;
+  min-width:0;
+}
+#export-btn{
+  background:var(--green);color:#fff;border:none;border-radius:8px;
+  padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;
+  white-space:nowrap;flex-shrink:0;
+}
+#export-btn:disabled{opacity:0.5;pointer-events:none;}
+
+/* ══ CANVAS AREA ══ */
+#canvas-area{
+  flex:1;min-height:0;position:relative;background:#000;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+#video-el{max-width:100%;max-height:100%;display:block;pointer-events:none;user-select:none;}
+#draw-canvas{position:absolute;touch-action:none;cursor:default;}
+
+#mode-hint{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  background:rgba(108,99,255,0.9);color:#fff;font-size:12px;font-weight:600;
+  padding:4px 14px;border-radius:20px;pointer-events:none;
+  opacity:0;transition:opacity 0.25s;white-space:nowrap;z-index:10;
+}
+#mode-hint.show{opacity:1;}
+#angle-badge{
+  position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,0.78);color:#fff;font-size:13px;font-weight:700;
+  padding:4px 14px;border-radius:20px;pointer-events:none;
+  opacity:0;transition:opacity 0.15s;white-space:nowrap;z-index:10;
+}
+#angle-badge.show{opacity:1;}
+#obj-actions{position:absolute;display:none;gap:6px;z-index:20;}
+#obj-actions.show{display:flex;}
+.obj-act-btn{
+  background:var(--surface);border:1px solid var(--border);color:var(--text);
+  border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;
+  white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.5);
+  -webkit-tap-highlight-color:transparent;
+}
+.obj-act-btn.del{color:var(--accent2);border-color:var(--accent2);}
+
+/* ══ BOTTOM PANEL ══ */
+#bottom-panel{flex-shrink:0;background:var(--surface);border-top:1px solid var(--border);}
+#tool-bar{
+  display:flex;align-items:center;gap:6px;padding:7px 10px;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap;
+}
+#tool-bar::-webkit-scrollbar{display:none;}
+.mode-group{
+  display:flex;gap:3px;background:var(--surface2);border-radius:9px;
+  padding:3px;border:1px solid var(--border);flex-shrink:0;
+}
+.mode-btn{
+  height:34px;padding:0 10px;border:none;border-radius:6px;
+  background:transparent;color:var(--text-dim);cursor:pointer;
+  font-size:12px;font-weight:600;white-space:nowrap;
+  -webkit-tap-highlight-color:transparent;transition:background 0.12s,color 0.12s;
+}
+.mode-btn.active{background:var(--accent);color:#fff;}
+.tool-sep{width:1px;height:28px;background:var(--border);flex-shrink:0;}
+.tool-group{
+  display:flex;gap:3px;background:var(--surface2);border-radius:9px;
+  padding:3px;border:1px solid var(--border);flex-shrink:0;
+}
+.tool-btn{
+  width:34px;height:34px;border:none;border-radius:6px;
+  background:transparent;color:var(--text-dim);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:15px;
+  -webkit-tap-highlight-color:transparent;transition:background 0.12s,color 0.12s;
+}
+.tool-btn.active{background:var(--accent);color:#fff;}
+.tool-btn:not(.active):active{background:var(--border);}
+.tool-btn.danger{color:var(--accent2);}
+#color-wrap{position:relative;flex-shrink:0;display:flex;align-items:center;}
+#color-swatch{
+  width:34px;height:34px;border-radius:50%;border:3px solid var(--border);
+  cursor:pointer;display:block;flex-shrink:0;
+}
+#color-input{position:absolute;top:0;left:0;width:34px;height:34px;opacity:0;cursor:pointer;border:none;padding:0;}
+.slider-wrap{display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.label-sm{font-size:10px;color:var(--text-dim);white-space:nowrap;}
+#size-slider{
+  width:70px;-webkit-appearance:none;appearance:none;
+  height:4px;border-radius:2px;background:var(--border);outline:none;cursor:pointer;
+}
+#size-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--text);cursor:pointer;
+}
+#video-controls{display:flex;align-items:center;gap:8px;padding:0 10px 7px;}
+.ctrl-btn{
+  background:var(--surface2);border:1px solid var(--border);color:var(--text);
+  border-radius:8px;width:38px;height:38px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;font-size:16px;
+  transition:background 0.12s;-webkit-tap-highlight-color:transparent;
+}
+.ctrl-btn:active{background:var(--accent);}
+#time-label{font-size:11px;color:var(--text-dim);white-space:nowrap;min-width:84px;text-align:right;flex-shrink:0;}
+#timeline-wrap{
+  flex:1;position:relative;height:38px;overflow:hidden;
+  border-radius:6px;background:var(--surface2);border:1px solid var(--border);
+  cursor:grab;user-select:none;touch-action:none;
+}
+#timeline-wrap:active{cursor:grabbing;}
+#film-strip{display:flex;height:100%;position:absolute;top:0;left:0;will-change:transform;}
+.film-frame{flex-shrink:0;width:48px;height:38px;background:#1a1a20;border-right:1px solid var(--border);overflow:hidden;}
+.film-frame canvas{width:100%;height:100%;display:block;}
+#playhead{
+  position:absolute;top:0;bottom:0;left:50%;width:2px;
+  background:var(--accent);transform:translateX(-50%);pointer-events:none;z-index:2;
+}
+#playhead::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--accent);
 }
 
-#draw-canvas {
-  position: absolute;
-  touch-action: none;
-  cursor: default;
+/* ══ EXPORT OVERLAY ══ */
+#export-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.85);
+  display:none;align-items:center;justify-content:center;z-index:100;
+  flex-direction:column;gap:20px;
 }
-
-/* 描画モードヒント */
-#mode-hint {
-  position: absolute;
-  top: 8px; left: 50%; transform: translateX(-50%);
-  background: rgba(108,99,255,0.9);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 4px 14px;
-  border-radius: 20px;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.25s;
-  white-space: nowrap;
-  z-index: 10;
-}
-#mode-hint.show { opacity: 1; }
-
-/* 選択中オブジェクトのアクションボタン */
-#obj-actions {
-  position: absolute;
-  display: none;
-  gap: 6px;
-  z-index: 20;
-  pointer-events: auto;
-}
-#obj-actions.show { display: flex; }
-.obj-act-btn {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: 8px;
-  padding: 5px 10px;
-  font-size: 12px;
-  cursor: pointer;
-  white-space: nowrap;
-  -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-}
-.obj-act-btn.del { color: var(--accent2); border-color: var(--accent2); }
-
-/* bottom panel */
-#bottom-panel {
-  flex-shrink: 0;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-}
-
-#tool-bar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 10px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  flex-wrap: nowrap;
-}
-#tool-bar::-webkit-scrollbar { display: none; }
-
-/* モードボタン群 */
-.mode-group {
-  display: flex;
-  gap: 3px;
-  background: var(--surface2);
-  border-radius: 9px;
-  padding: 3px;
-  border: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.mode-btn {
-  height: 34px;
-  padding: 0 10px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-dim);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-  -webkit-tap-highlight-color: transparent;
-  transition: background 0.12s, color 0.12s;
-}
-.mode-btn.active { background: var(--accent); color: #fff; }
-
-.tool-sep {
-  width: 1px; height: 28px;
-  background: var(--border);
-  flex-shrink: 0;
-}
-
-/* 図形ツール */
-.tool-group {
-  display: flex;
-  gap: 3px;
-  background: var(--surface2);
-  border-radius: 9px;
-  padding: 3px;
-  border: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.tool-btn {
-  width: 34px; height: 34px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-dim);
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px;
-  -webkit-tap-highlight-color: transparent;
-  transition: background 0.12s, color 0.12s;
-}
-.tool-btn.active { background: var(--accent); color: #fff; }
-.tool-btn:not(.active):active { background: var(--border); }
-
-/* カラー */
-#color-wrap { position: relative; flex-shrink: 0; display: flex; align-items: center; }
-#color-swatch {
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  border: 3px solid var(--border);
-  cursor: pointer;
-  display: block;
-  -webkit-tap-highlight-color: transparent;
-  flex-shrink: 0;
-}
-#color-input {
-  position: absolute;
-  top: 0; left: 0;
-  width: 34px; height: 34px;
-  opacity: 0;
-  cursor: pointer;
-  border: none;
-  padding: 0;
-}
-
-/* サイズ */
-.slider-wrap { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
-.label-sm { font-size: 10px; color: var(--text-dim); white-space: nowrap; }
-#size-slider {
-  width: 70px;
-  -webkit-appearance: none;
-  appearance: none;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--border);
-  outline: none;
-  cursor: pointer;
-}
-#size-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 14px; height: 14px;
-  border-radius: 50%;
-  background: var(--text);
-  cursor: pointer;
-}
-
-/* undo */
-.tool-btn.danger { color: var(--accent2); }
-
-/* video controls */
-#video-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 10px 7px;
-}
-.ctrl-btn {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: 8px;
-  width: 38px; height: 38px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-  font-size: 16px;
-  transition: background 0.12s;
-  -webkit-tap-highlight-color: transparent;
-}
-.ctrl-btn:active { background: var(--accent); }
-
-#time-label {
-  font-size: 11px;
-  color: var(--text-dim);
-  white-space: nowrap;
-  min-width: 84px;
-  text-align: right;
-  flex-shrink: 0;
-}
-
-/* film strip */
-#timeline-wrap {
-  flex: 1;
-  position: relative;
-  height: 38px;
-  overflow: hidden;
-  border-radius: 6px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  cursor: grab;
-  user-select: none;
-  touch-action: none;
-}
-#timeline-wrap:active { cursor: grabbing; }
-#film-strip {
-  display: flex;
-  height: 100%;
-  position: absolute;
-  top: 0; left: 0;
-  will-change: transform;
-}
-.film-frame {
-  flex-shrink: 0;
-  width: 48px; height: 38px;
-  background: #1a1a20;
-  border-right: 1px solid var(--border);
-  overflow: hidden;
-}
-.film-frame canvas { width: 100%; height: 100%; display: block; }
-#playhead {
-  position: absolute;
-  top: 0; bottom: 0; left: 50%;
-  width: 2px;
-  background: var(--accent);
-  transform: translateX(-50%);
-  pointer-events: none;
-  z-index: 2;
-}
-#playhead::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 50%;
-  transform: translateX(-50%);
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 6px solid var(--accent);
+#export-overlay.show{display:flex;}
+#export-overlay p{color:#fff;font-size:15px;font-weight:600;}
+#export-progress{width:240px;height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+#export-bar{height:100%;background:var(--accent);border-radius:3px;width:0%;transition:width 0.1s;}
+#export-cancel{
+  background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);
+  border-radius:8px;padding:8px 20px;font-size:13px;cursor:pointer;
 }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>🎬 <span>動画</span>ドロー</h1>
-  <button id="open-btn" onclick="document.getElementById('file-input').click()">動画を開く</button>
-  <input type="file" id="file-input" accept="video/*">
-</header>
-
-<div id="drop-zone">
-  <svg width="64" height="64" viewBox="0 0 72 72" fill="none">
-    <rect x="8" y="14" width="56" height="44" rx="6" stroke="#6c63ff" stroke-width="3"/>
-    <circle cx="26" cy="30" r="5" stroke="#6c63ff" stroke-width="2.5"/>
-    <path d="M8 46l14-12 10 9 12-14 20 17" stroke="#6c63ff" stroke-width="2.5" stroke-linejoin="round"/>
-    <path d="M36 36v-16M29 26l7-7 7 7" stroke="#ff6584" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>
-  <p>「動画を開く」で<br>動画ファイルを選択してください</p>
-  <small>MP4 / MOV / WebM など対応</small>
+<!-- ══ HOME SCREEN ══ -->
+<div id="home-screen" class="screen active">
+  <div id="home-header">
+    <h1>🎬 <span>動画</span>ドロー</h1>
+    <button id="new-project-btn">＋ 新規</button>
+    <input type="file" id="file-input" accept="video/*">
+  </div>
+  <div id="project-list">
+    <div id="empty-state">
+      <svg width="64" height="64" viewBox="0 0 72 72" fill="none">
+        <rect x="8" y="14" width="56" height="44" rx="6" stroke="#6c63ff" stroke-width="3"/>
+        <path d="M29 36l9-6v12l-9-6z" stroke="#6c63ff" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M36 8v8M28 10l3 7M44 10l-3 7" stroke="#ff6584" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <p>「＋ 新規」で動画を読み込んで<br>プロジェクトを作成しましょう</p>
+    </div>
+  </div>
 </div>
 
-<div id="workspace">
+<!-- ══ EDITOR SCREEN ══ -->
+<div id="editor-screen" class="screen">
+  <div id="editor-header">
+    <button id="back-btn">← 一覧</button>
+    <input id="project-name-input" type="text" placeholder="プロジェクト名" maxlength="40">
+    <button id="export-btn">📥 出力</button>
+  </div>
+
   <div id="canvas-area">
     <video id="video-el" playsinline></video>
     <canvas id="draw-canvas"></canvas>
     <div id="mode-hint"></div>
+    <div id="angle-badge"></div>
     <div id="obj-actions">
       <button class="obj-act-btn" id="obj-color-btn">🎨 色</button>
       <button class="obj-act-btn del" id="obj-delete-btn">🗑 削除</button>
@@ -375,45 +251,32 @@ header h1 span { color: var(--accent); }
 
   <div id="bottom-panel">
     <div id="tool-bar">
-
-      <!-- モード切替 -->
       <div class="mode-group">
         <button class="mode-btn active" id="mode-select">👆 選択</button>
         <button class="mode-btn" id="mode-draw">✏️ 描画</button>
       </div>
-
       <div class="tool-sep"></div>
-
-      <!-- 図形ツール（描画モード時のみ有効） -->
-      <div class="tool-group" id="shape-tools">
-        <button class="tool-btn active" data-tool="pen"    title="ペン">✏️</button>
-        <button class="tool-btn"        data-tool="line"   title="直線">╱</button>
-        <button class="tool-btn"        data-tool="rect"   title="矩形">▭</button>
-        <button class="tool-btn"        data-tool="circle" title="円">○</button>
-        <button class="tool-btn"        data-tool="arrow"  title="矢印">➔</button>
+      <div class="tool-group">
+        <button class="tool-btn active" data-tool="pen"   >✏️</button>
+        <button class="tool-btn"        data-tool="line"  >╱</button>
+        <button class="tool-btn"        data-tool="rect"  >▭</button>
+        <button class="tool-btn"        data-tool="circle">○</button>
+        <button class="tool-btn"        data-tool="arrow" >➔</button>
       </div>
-
-      <!-- カラー -->
       <div id="color-wrap">
         <div id="color-swatch" style="background:#6c63ff;"></div>
         <input type="color" id="color-input" value="#6c63ff">
       </div>
-
-      <!-- 太さ -->
       <div class="slider-wrap">
         <span class="label-sm">太さ</span>
         <input type="range" id="size-slider" min="1" max="30" value="4">
       </div>
-
       <div class="tool-sep"></div>
-
       <div class="tool-group">
-        <button class="tool-btn" id="undo-btn" title="元に戻す" style="font-size:14px;">↩</button>
-        <button class="tool-btn danger" id="clear-btn" title="全消去" style="font-size:12px;">✕</button>
+        <button class="tool-btn" id="undo-btn" style="font-size:14px;">↩</button>
+        <button class="tool-btn danger" id="clear-btn" style="font-size:12px;">✕</button>
       </div>
-
     </div>
-
     <div id="video-controls">
       <button class="ctrl-btn" id="play-btn">▶</button>
       <div id="timeline-wrap">
@@ -425,581 +288,770 @@ header h1 span { color: var(--accent); }
   </div>
 </div>
 
+<!-- ══ EXPORT OVERLAY ══ -->
+<div id="export-overlay">
+  <p id="export-status">動画を合成中...</p>
+  <div id="export-progress"><div id="export-bar"></div></div>
+  <button id="export-cancel">キャンセル</button>
+</div>
+
 <script>
-// ════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
+// DB
+// ══════════════════════════════════════════════════════════
+const DB_NAME = 'VideoDraw', DB_VER = 1;
+let db;
+
+function openDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('projects'))
+        d.createObjectStore('projects', { keyPath: 'id' });
+      if (!d.objectStoreNames.contains('videos'))
+        d.createObjectStore('videos', { keyPath: 'id' });
+    };
+    req.onsuccess = e => { db = e.target.result; res(db); };
+    req.onerror   = e => rej(e);
+  });
+}
+
+function dbGet(store, id) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).get(id);
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+  });
+}
+function dbPut(store, obj) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).put(obj);
+    req.onsuccess = () => res();
+    req.onerror   = () => rej(req.error);
+  });
+}
+function dbGetAll(store) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+  });
+}
+function dbDelete(store, id) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).delete(id);
+    req.onsuccess = () => res();
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+// ══════════════════════════════════════════════════════════
 // STATE
-// ════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
+let currentProjectId = null;
+let saveTimer = null;
+
 const S = {
-  mode: 'select',      // 'select' | 'draw'
-  tool: 'pen',
-  color: '#6c63ff',
-  lineWidth: 4,
-
-  objects: [],         // all placed objects
-  selectedId: null,
-
-  // drawing
-  isDrawing: false,
-  drawStart: null,
-  penPoints: [],
-  snapshot: null,      // ImageData for shape preview
-
-  // moving
-  isMoving: false,
-  moveObjId: null,
-  moveStart: null,     // {x,y} pointer
-  moveObjOrigin: null, // original object position
+  mode:'select', tool:'pen', color:'#6c63ff', lineWidth:4,
+  objects:[], selectedId:null,
+  isDrawing:false, drawStart:null, penPoints:[], snapshot:null,
+  dragMode:null, dragHandleIdx:null, dragStart:null, dragObjSnapshot:null,
 };
-
 let nextId = 1;
 
-// ════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 // ELEMENTS
-// ════════════════════════════════════════════
-const fileInput    = document.getElementById('file-input');
-const videoEl      = document.getElementById('video-el');
-const canvas       = document.getElementById('draw-canvas');
-const ctx          = canvas.getContext('2d');
-const workspace    = document.getElementById('workspace');
-const dropZone     = document.getElementById('drop-zone');
-const canvasArea   = document.getElementById('canvas-area');
-const playBtn      = document.getElementById('play-btn');
-const timeLabel    = document.getElementById('time-label');
-const colorInput   = document.getElementById('color-input');
-const colorSwatch  = document.getElementById('color-swatch');
-const sizeSlider   = document.getElementById('size-slider');
-const undoBtn      = document.getElementById('undo-btn');
-const clearBtn     = document.getElementById('clear-btn');
-const modeHint     = document.getElementById('mode-hint');
-const objActions   = document.getElementById('obj-actions');
-const objColorBtn  = document.getElementById('obj-color-btn');
-const objDeleteBtn = document.getElementById('obj-delete-btn');
-const filmStrip    = document.getElementById('film-strip');
-const timelineWrap = document.getElementById('timeline-wrap');
-const modeBtns     = { select: document.getElementById('mode-select'), draw: document.getElementById('mode-draw') };
+// ══════════════════════════════════════════════════════════
+const homeScreen     = document.getElementById('home-screen');
+const editorScreen   = document.getElementById('editor-screen');
+const newProjectBtn  = document.getElementById('new-project-btn');
+const fileInput      = document.getElementById('file-input');
+const projectList    = document.getElementById('project-list');
+const emptyState     = document.getElementById('empty-state');
+const backBtn        = document.getElementById('back-btn');
+const projectNameIn  = document.getElementById('project-name-input');
+const exportBtn      = document.getElementById('export-btn');
+const videoEl        = document.getElementById('video-el');
+const canvas         = document.getElementById('draw-canvas');
+const ctx            = canvas.getContext('2d');
+const canvasArea     = document.getElementById('canvas-area');
+const playBtn        = document.getElementById('play-btn');
+const timeLabel      = document.getElementById('time-label');
+const colorInput     = document.getElementById('color-input');
+const colorSwatch    = document.getElementById('color-swatch');
+const sizeSlider     = document.getElementById('size-slider');
+const undoBtn        = document.getElementById('undo-btn');
+const clearBtn       = document.getElementById('clear-btn');
+const modeHint       = document.getElementById('mode-hint');
+const angleBadge     = document.getElementById('angle-badge');
+const objActions     = document.getElementById('obj-actions');
+const objColorBtn    = document.getElementById('obj-color-btn');
+const objDeleteBtn   = document.getElementById('obj-delete-btn');
+const filmStrip      = document.getElementById('film-strip');
+const timelineWrap   = document.getElementById('timeline-wrap');
+const exportOverlay  = document.getElementById('export-overlay');
+const exportStatus   = document.getElementById('export-status');
+const exportBar      = document.getElementById('export-bar');
+const exportCancel   = document.getElementById('export-cancel');
+const modeBtns       = { select: document.getElementById('mode-select'), draw: document.getElementById('mode-draw') };
 
-// ════════════════════════════════════════════
-// FILE
-// ════════════════════════════════════════════
-fileInput.addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  videoEl.src = URL.createObjectURL(file);
-  videoEl.load();
-  dropZone.style.display = 'none';
-  workspace.classList.add('active');
+// ══════════════════════════════════════════════════════════
+// HOME
+// ══════════════════════════════════════════════════════════
+async function renderProjectList() {
+  const projects = await dbGetAll('projects');
+  projects.sort((a,b) => b.updatedAt - a.updatedAt);
+  // clear except empty state
+  [...projectList.children].forEach(c => { if (c.id !== 'empty-state') c.remove(); });
+  emptyState.style.display = projects.length ? 'none' : 'flex';
+
+  for (const p of projects) {
+    const card = document.createElement('div');
+    card.className = 'project-card';
+
+    // thumb
+    const thumb = document.createElement('div');
+    thumb.className = 'card-thumb';
+    const thumbVid = document.createElement('video');
+    thumbVid.muted = true; thumbVid.playsInline = true; thumbVid.preload = 'metadata';
+    // Load video blob for thumb
+    dbGet('videos', p.id).then(vr => {
+      if (vr) { thumbVid.src = URL.createObjectURL(vr.blob); }
+    });
+    thumb.appendChild(thumbVid);
+
+    const body = document.createElement('div');
+    body.className = 'card-body';
+    const name = document.createElement('div'); name.className = 'card-name'; name.textContent = p.name || '無題';
+    const meta = document.createElement('div'); meta.className = 'card-meta';
+    meta.textContent = `図形 ${p.objects?.length ?? 0} 個 ・ ${new Date(p.updatedAt).toLocaleDateString('ja-JP')}`;
+    body.appendChild(name); body.appendChild(meta);
+
+    const acts = document.createElement('div'); acts.className = 'card-actions';
+    const delBtn = document.createElement('button'); delBtn.className = 'card-del-btn'; delBtn.textContent = '削除';
+    delBtn.addEventListener('click', async e => {
+      e.stopPropagation();
+      if (!confirm(`「${p.name || '無題'}」を削除しますか？`)) return;
+      await dbDelete('projects', p.id);
+      await dbDelete('videos', p.id);
+      renderProjectList();
+    });
+    acts.appendChild(delBtn);
+
+    card.appendChild(thumb); card.appendChild(body); card.appendChild(acts);
+    card.addEventListener('click', () => openProject(p.id));
+    projectList.appendChild(card);
+  }
+}
+
+newProjectBtn.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', async e => {
+  const file = e.target.files[0]; if (!file) return;
+  fileInput.value = '';
+  const id = Date.now().toString();
+  const name = file.name.replace(/\.[^.]+$/, '');
+  const project = { id, name, objects:[], color:'#6c63ff', lineWidth:4, updatedAt: Date.now() };
+  await dbPut('projects', project);
+  await dbPut('videos', { id, blob: file });
+  openProject(id);
 });
 
-// ════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
+// OPEN PROJECT
+// ══════════════════════════════════════════════════════════
+let videoBlob = null;
+let filmBuilt = false, filmFrameEls = [];
+
+async function openProject(id) {
+  currentProjectId = id;
+  filmBuilt = false;
+  const project = await dbGet('projects', id);
+  const videoRec = await dbGet('videos', id);
+  if (!project || !videoRec) { alert('データが見つかりません'); return; }
+
+  // restore state
+  S.objects = project.objects || [];
+  S.selectedId = null;
+  S.color = project.color || '#6c63ff';
+  S.lineWidth = project.lineWidth || 4;
+  colorInput.value = S.color;
+  colorSwatch.style.background = S.color;
+  sizeSlider.value = S.lineWidth;
+  nextId = (S.objects.reduce((m,o)=>Math.max(m,o.id),0) || 0) + 1;
+
+  projectNameIn.value = project.name || '';
+  videoBlob = videoRec.blob;
+  videoEl.src = URL.createObjectURL(videoBlob);
+  videoEl.load();
+
+  homeScreen.classList.remove('active');
+  editorScreen.classList.add('active');
+  hideObjActions();
+  setMode('select');
+}
+
+// ══════════════════════════════════════════════════════════
+// SAVE (debounced)
+// ══════════════════════════════════════════════════════════
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveProject, 800);
+}
+async function saveProject() {
+  if (!currentProjectId) return;
+  const project = {
+    id: currentProjectId,
+    name: projectNameIn.value || '無題',
+    objects: S.objects,
+    color: S.color,
+    lineWidth: S.lineWidth,
+    updatedAt: Date.now(),
+  };
+  await dbPut('projects', project);
+}
+
+projectNameIn.addEventListener('input', scheduleSave);
+
+// ══════════════════════════════════════════════════════════
+// BACK
+// ══════════════════════════════════════════════════════════
+backBtn.addEventListener('click', async () => {
+  await saveProject();
+  videoEl.pause();
+  videoEl.src = '';
+  editorScreen.classList.remove('active');
+  homeScreen.classList.add('active');
+  renderProjectList();
+});
+
+// ══════════════════════════════════════════════════════════
 // VIDEO
-// ════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 videoEl.addEventListener('loadedmetadata', () => { resizeCanvas(); buildFilmStrip(); });
 videoEl.addEventListener('timeupdate', updateTimeline);
 videoEl.addEventListener('play',  () => playBtn.textContent = '⏸');
 videoEl.addEventListener('pause', () => playBtn.textContent = '▶');
 videoEl.addEventListener('ended', () => playBtn.textContent = '▶');
 playBtn.addEventListener('click', () => videoEl.paused ? videoEl.play() : videoEl.pause());
-
 function fmt(s) {
   if (!isFinite(s)) return '0:00';
   return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 }
 
-// ════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 // CANVAS RESIZE
-// ════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 new ResizeObserver(resizeCanvas).observe(canvasArea);
 new ResizeObserver(resizeCanvas).observe(videoEl);
-
 function resizeCanvas() {
-  const vr = videoEl.getBoundingClientRect();
-  const ar = canvasArea.getBoundingClientRect();
-  if (!vr.width || !vr.height) return;
-  canvas.width  = vr.width;
-  canvas.height = vr.height;
-  canvas.style.width  = vr.width  + 'px';
-  canvas.style.height = vr.height + 'px';
-  canvas.style.left   = (vr.left - ar.left) + 'px';
-  canvas.style.top    = (vr.top  - ar.top)  + 'px';
+  const vr=videoEl.getBoundingClientRect(), ar=canvasArea.getBoundingClientRect();
+  if (!vr.width||!vr.height) return;
+  canvas.width=vr.width; canvas.height=vr.height;
+  canvas.style.width=vr.width+'px'; canvas.style.height=vr.height+'px';
+  canvas.style.left=(vr.left-ar.left)+'px'; canvas.style.top=(vr.top-ar.top)+'px';
   render();
 }
 
-// ════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 // MODE
-// ════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 function setMode(m) {
-  S.mode = m;
-  S.selectedId = null;
-  hideObjActions();
-
-  Object.entries(modeBtns).forEach(([k,btn]) => btn.classList.toggle('active', k === m));
-
-  if (m === 'select') {
-    canvas.style.cursor = 'default';
-    canvas.style.pointerEvents = 'auto';
-    showHint('👆 選択・移動モード', 1200);
-  } else {
-    canvas.style.cursor = 'crosshair';
-    canvas.style.pointerEvents = 'auto';
-    showHint('✏️ 描画モード — 図形を1つ描くと自動で選択に戻ります', 1800);
-  }
+  S.mode=m; S.selectedId=null; hideObjActions();
+  Object.entries(modeBtns).forEach(([k,b])=>b.classList.toggle('active',k===m));
+  canvas.style.cursor=m==='draw'?'crosshair':'default';
+  if (m==='select') showHint('👆 選択・移動・編集モード',1200);
+  else              showHint('✏️ 描画モード — 1図形で自動で戻ります',1800);
   render();
 }
-
-modeBtns.select.addEventListener('click', () => setMode('select'));
-modeBtns.draw.addEventListener('click',   () => setMode('draw'));
-
-function showHint(text, duration) {
-  modeHint.textContent = text;
-  modeHint.classList.add('show');
-  clearTimeout(modeHint._t);
-  modeHint._t = setTimeout(() => modeHint.classList.remove('show'), duration);
+modeBtns.select.addEventListener('click',()=>setMode('select'));
+modeBtns.draw.addEventListener('click',  ()=>setMode('draw'));
+function showHint(text,ms){
+  modeHint.textContent=text; modeHint.classList.add('show');
+  clearTimeout(modeHint._t); modeHint._t=setTimeout(()=>modeHint.classList.remove('show'),ms);
 }
 
-// ════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 // COLOR / SIZE
-// ════════════════════════════════════════════
-colorInput.addEventListener('input', e => {
-  S.color = e.target.value;
-  colorSwatch.style.background = S.color;
-  // 選択中オブジェクトに即反映
-  if (S.selectedId !== null) {
-    const obj = S.objects.find(o => o.id === S.selectedId);
-    if (obj) { obj.color = S.color; render(); }
-  }
+// ══════════════════════════════════════════════════════════
+colorSwatch.addEventListener('click',()=>colorInput.click());
+colorInput.addEventListener('input',e=>{
+  S.color=e.target.value; colorSwatch.style.background=S.color;
+  const obj=selObj(); if(obj){obj.color=S.color;render();}
+  scheduleSave();
 });
-
-// swatchをタップ→colorInputを開く
-colorSwatch.addEventListener('click', () => colorInput.click());
-
-sizeSlider.addEventListener('input', e => { S.lineWidth = +e.target.value; });
-
-// ════════════════════════════════════════════
-// TOOL SELECTION
-// ════════════════════════════════════════════
-document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tool-btn[data-tool]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    S.tool = btn.dataset.tool;
-    if (S.mode === 'draw') canvas.style.cursor = 'crosshair';
+sizeSlider.addEventListener('input',e=>{
+  S.lineWidth=+e.target.value;
+  const obj=selObj(); if(obj){obj.lineWidth=S.lineWidth;render();}
+  scheduleSave();
+});
+document.querySelectorAll('.tool-btn[data-tool]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tool-btn[data-tool]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active'); S.tool=btn.dataset.tool;
   });
 });
-
-// ════════════════════════════════════════════
-// UNDO / CLEAR
-// ════════════════════════════════════════════
-undoBtn.addEventListener('click', () => {
-  S.objects.pop();
-  S.selectedId = null;
-  hideObjActions();
-  render();
-});
-clearBtn.addEventListener('click', () => {
-  S.objects = [];
-  S.selectedId = null;
-  hideObjActions();
-  render();
+undoBtn.addEventListener('click',()=>{S.objects.pop();S.selectedId=null;hideObjActions();render();scheduleSave();});
+clearBtn.addEventListener('click',()=>{
+  if(!confirm('すべての描画を消去しますか？'))return;
+  S.objects=[];S.selectedId=null;hideObjActions();render();scheduleSave();
 });
 
-// ════════════════════════════════════════════
-// OBJECT ACTIONS (色変更・削除)
-// ════════════════════════════════════════════
-// 選択オブジェクトの色変更
-const objColorInput = document.createElement('input');
-objColorInput.type = 'color';
-objColorInput.style.cssText = 'position:absolute;opacity:0;width:0;height:0;';
-document.body.appendChild(objColorInput);
+// ══════════════════════════════════════════════════════════
+// OBJ ACTIONS
+// ══════════════════════════════════════════════════════════
+const objColorInputEl=document.createElement('input');
+objColorInputEl.type='color';
+objColorInputEl.style.cssText='position:absolute;opacity:0;width:0;height:0;';
+document.body.appendChild(objColorInputEl);
 
-objColorBtn.addEventListener('click', () => {
-  const obj = S.objects.find(o => o.id === S.selectedId);
-  if (!obj) return;
-  objColorInput.value = obj.color;
-  objColorInput.click();
+objColorBtn.addEventListener('click',()=>{
+  const obj=selObj(); if(!obj)return;
+  objColorInputEl.value=obj.color; objColorInputEl.click();
 });
-objColorInput.addEventListener('input', e => {
-  const obj = S.objects.find(o => o.id === S.selectedId);
-  if (!obj) return;
-  obj.color = e.target.value;
-  S.color = e.target.value;
-  colorSwatch.style.background = e.target.value;
-  colorInput.value = e.target.value;
-  render();
+objColorInputEl.addEventListener('input',e=>{
+  const obj=selObj(); if(!obj)return;
+  obj.color=e.target.value; S.color=e.target.value;
+  colorSwatch.style.background=e.target.value; colorInput.value=e.target.value;
+  render(); scheduleSave();
 });
-
-objDeleteBtn.addEventListener('click', () => {
-  S.objects = S.objects.filter(o => o.id !== S.selectedId);
-  S.selectedId = null;
-  hideObjActions();
-  render();
+objDeleteBtn.addEventListener('click',()=>{
+  S.objects=S.objects.filter(o=>o.id!==S.selectedId);
+  S.selectedId=null; hideObjActions(); render(); scheduleSave();
 });
-
-function showObjActions(x, y) {
+function showObjActions(x,y){
   objActions.classList.add('show');
-  // position above the tap point
-  const ar = canvasArea.getBoundingClientRect();
-  let top = y - 50;
-  if (top < 4) top = y + 10;
-  objActions.style.left = Math.max(4, Math.min(ar.width - 130, x - 60)) + 'px';
-  objActions.style.top  = top + 'px';
+  const ar=canvasArea.getBoundingClientRect();
+  let top=y-50; if(top<4)top=y+10;
+  objActions.style.left=Math.max(4,Math.min(ar.width-140,x-70))+'px';
+  objActions.style.top=top+'px';
 }
-function hideObjActions() { objActions.classList.remove('show'); }
+function hideObjActions(){objActions.classList.remove('show');}
+function selObj(){return S.objects.find(o=>o.id===S.selectedId)||null;}
 
-// ════════════════════════════════════════════
-// POINTER HELPERS
-// ════════════════════════════════════════════
-function getPos(e) {
-  const rect = canvas.getBoundingClientRect();
-  const src = e.touches ? e.touches[0] : e;
-  return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+// ══════════════════════════════════════════════════════════
+// HANDLES
+// ══════════════════════════════════════════════════════════
+const HANDLE_R=10;
+function getHandles(obj){
+  if(obj.type==='pen') return [];
+  if(obj.type==='line'||obj.type==='arrow')
+    return [{x:obj.x1,y:obj.y1,label:'p1'},{x:obj.x2,y:obj.y2,label:'p2'}];
+  if(obj.type==='rect')
+    return [{x:obj.x1,y:obj.y1,label:'tl'},{x:obj.x2,y:obj.y1,label:'tr'},
+            {x:obj.x2,y:obj.y2,label:'br'},{x:obj.x1,y:obj.y2,label:'bl'}];
+  if(obj.type==='circle'){
+    const cx=(obj.x1+obj.x2)/2,cy=(obj.y1+obj.y2)/2;
+    const rx=Math.abs(obj.x2-obj.x1)/2,ry=Math.abs(obj.y2-obj.y1)/2;
+    return [{x:cx,y:cy,label:'center'},
+            {x:cx+rx,y:cy,label:'right'},{x:cx-rx,y:cy,label:'left'},
+            {x:cx,y:cy-ry,label:'top'},{x:cx,y:cy+ry,label:'bottom'}];
+  }
+  return [];
+}
+function hitHandle(obj,px,py){
+  const hs=getHandles(obj);
+  for(let i=0;i<hs.length;i++) if(Math.hypot(px-hs[i].x,py-hs[i].y)<=HANDLE_R*1.5) return i;
+  return -1;
+}
+function applyHandleDrag(obj,idx,nx,ny){
+  const h=getHandles(obj)[idx]; if(!h) return;
+  const L=h.label;
+  if(obj.type==='line'||obj.type==='arrow'){
+    if(L==='p1'){obj.x1=nx;obj.y1=ny;}else{obj.x2=nx;obj.y2=ny;}
+  } else if(obj.type==='rect'){
+    if(L==='tl'){obj.x1=nx;obj.y1=ny;}if(L==='tr'){obj.x2=nx;obj.y1=ny;}
+    if(L==='br'){obj.x2=nx;obj.y2=ny;}if(L==='bl'){obj.x1=nx;obj.y2=ny;}
+  } else if(obj.type==='circle'){
+    const cx=(obj.x1+obj.x2)/2,cy=(obj.y1+obj.y2)/2;
+    const rx=Math.abs(obj.x2-obj.x1)/2,ry=Math.abs(obj.y2-obj.y1)/2;
+    if(L==='center'){const dx=nx-cx,dy=ny-cy;obj.x1+=dx;obj.y1+=dy;obj.x2+=dx;obj.y2+=dy;}
+    else if(L==='right'||L==='left'){const r=Math.abs(nx-cx);obj.x1=cx-r;obj.x2=cx+r;}
+    else{const r=Math.abs(ny-cy);obj.y1=cy-r;obj.y2=cy+r;}
+  }
 }
 
-// ════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 // HIT TEST
-// ════════════════════════════════════════════
-function hitTest(obj, x, y) {
-  const PAD = Math.max(10, (obj.lineWidth || 4) * 2);
-  if (obj.type === 'pen') {
-    for (let i = 0; i < obj.points.length - 1; i++) {
-      if (distToSegment(x, y, obj.points[i], obj.points[i+1]) < PAD) return true;
-    }
+// ══════════════════════════════════════════════════════════
+function hitTest(obj,x,y){
+  const PAD=Math.max(10,(obj.lineWidth||4)*2);
+  if(obj.type==='pen'){
+    for(let i=0;i<obj.points.length-1;i++) if(distSeg(x,y,obj.points[i],obj.points[i+1])<PAD)return true;
     return false;
   }
-  if (obj.type === 'line' || obj.type === 'arrow') {
-    return distToSegment(x, y, {x:obj.x1,y:obj.y1}, {x:obj.x2,y:obj.y2}) < PAD;
+  if(obj.type==='line'||obj.type==='arrow') return distSeg(x,y,{x:obj.x1,y:obj.y1},{x:obj.x2,y:obj.y2})<PAD;
+  if(obj.type==='rect'){
+    const x1=Math.min(obj.x1,obj.x2),x2=Math.max(obj.x1,obj.x2),y1=Math.min(obj.y1,obj.y2),y2=Math.max(obj.y1,obj.y2);
+    return distRect(x,y,x1,y1,x2,y2)<PAD;
   }
-  if (obj.type === 'rect') {
-    const minX = Math.min(obj.x1,obj.x2), maxX = Math.max(obj.x1,obj.x2);
-    const minY = Math.min(obj.y1,obj.y2), maxY = Math.max(obj.y1,obj.y2);
-    return distToRect(x, y, minX, minY, maxX, maxY) < PAD;
-  }
-  if (obj.type === 'circle') {
-    const cx=(obj.x1+obj.x2)/2, cy=(obj.y1+obj.y2)/2;
-    const rx=Math.abs(obj.x2-obj.x1)/2, ry=Math.abs(obj.y2-obj.y1)/2;
-    if (rx < 1 || ry < 1) return false;
-    const nx=(x-cx)/rx, ny=(y-cy)/ry;
-    const d = Math.abs(Math.sqrt(nx*nx+ny*ny) - 1) * Math.min(rx,ry);
-    return d < PAD;
+  if(obj.type==='circle'){
+    const cx=(obj.x1+obj.x2)/2,cy=(obj.y1+obj.y2)/2,rx=Math.abs(obj.x2-obj.x1)/2,ry=Math.abs(obj.y2-obj.y1)/2;
+    if(rx<1||ry<1)return false;
+    return Math.abs(Math.sqrt(((x-cx)/rx)**2+((y-cy)/ry)**2)-1)*Math.min(rx,ry)<PAD;
   }
   return false;
 }
-
-function distToSegment(px, py, a, b) {
-  const dx=b.x-a.x, dy=b.y-a.y;
-  const len2=dx*dx+dy*dy;
-  if (len2===0) return Math.hypot(px-a.x, py-a.y);
-  const t=Math.max(0,Math.min(1,((px-a.x)*dx+(py-a.y)*dy)/len2));
-  return Math.hypot(px-(a.x+t*dx), py-(a.y+t*dy));
+function distSeg(px,py,a,b){
+  const dx=b.x-a.x,dy=b.y-a.y,l2=dx*dx+dy*dy;
+  if(l2===0)return Math.hypot(px-a.x,py-a.y);
+  const t=Math.max(0,Math.min(1,((px-a.x)*dx+(py-a.y)*dy)/l2));
+  return Math.hypot(px-(a.x+t*dx),py-(a.y+t*dy));
+}
+function distRect(px,py,x1,y1,x2,y2){
+  const inside=px>=x1&&px<=x2&&py>=y1&&py<=y2;
+  if(!inside){return Math.hypot(px-Math.max(x1,Math.min(x2,px)),py-Math.max(y1,Math.min(y2,py)));}
+  return Math.min(px-x1,x2-px,py-y1,y2-py);
 }
 
-function distToRect(px, py, x1, y1, x2, y2) {
-  // Distance to nearest edge of rect (outline)
-  const inside = px>=x1&&px<=x2&&py>=y1&&py<=y2;
-  if (!inside) {
-    const cx=Math.max(x1,Math.min(x2,px)), cy=Math.max(y1,Math.min(y2,py));
-    return Math.hypot(px-cx, py-cy);
-  }
-  // inside: dist to nearest edge
-  return Math.min(px-x1, x2-px, py-y1, y2-py);
+// ══════════════════════════════════════════════════════════
+// MOVE HELPERS
+// ══════════════════════════════════════════════════════════
+function cloneObj(o){return JSON.parse(JSON.stringify(o));}
+function translateObj(obj,dx,dy){
+  if(obj.type==='pen') obj.points=obj.points.map(p=>({x:p.x+dx,y:p.y+dy}));
+  else{obj.x1+=dx;obj.y1+=dy;obj.x2+=dx;obj.y2+=dy;}
 }
 
-// ════════════════════════════════════════════
-// OBJECT MOVE HELPERS
-// ════════════════════════════════════════════
-function cloneObj(o) { return JSON.parse(JSON.stringify(o)); }
-
-function translateObj(obj, dx, dy) {
-  if (obj.type === 'pen') {
-    obj.points = obj.points.map(p => ({x: p.x+dx, y: p.y+dy}));
-  } else {
-    obj.x1 += dx; obj.y1 += dy;
-    obj.x2 += dx; obj.y2 += dy;
-  }
+// ══════════════════════════════════════════════════════════
+// ANGLE
+// ══════════════════════════════════════════════════════════
+function lineAngle(x1,y1,x2,y2){
+  let deg=Math.atan2(y2-y1,x2-x1)*180/Math.PI;
+  if(deg>90)deg-=180; if(deg<-90)deg+=180; return deg;
 }
+function showAngle(deg){angleBadge.textContent=`${deg>=0?'+':''}${deg.toFixed(1)}°`;angleBadge.classList.add('show');}
+function hideAngle(){angleBadge.classList.remove('show');}
 
-// ════════════════════════════════════════════
-// CANVAS EVENTS
-// ════════════════════════════════════════════
-canvas.addEventListener('touchstart', e => { if (S.mode !== 'select' || S.isDrawing) e.preventDefault(); }, { passive: false });
-canvas.addEventListener('touchmove',  e => e.preventDefault(), { passive: false });
+// ══════════════════════════════════════════════════════════
+// POINTER
+// ══════════════════════════════════════════════════════════
+function getPos(e){
+  const rect=canvas.getBoundingClientRect(),src=e.touches?e.touches[0]:e;
+  return{x:src.clientX-rect.left,y:src.clientY-rect.top};
+}
+canvas.addEventListener('touchstart',e=>{if(S.isDrawing||S.dragMode)e.preventDefault();},{passive:false});
+canvas.addEventListener('touchmove', e=>e.preventDefault(),{passive:false});
+canvas.addEventListener('pointerdown',onDown);
+canvas.addEventListener('pointermove',onMove);
+canvas.addEventListener('pointerup',  onUp);
+canvas.addEventListener('pointerleave',onUp);
 
-canvas.addEventListener('pointerdown', onDown);
-canvas.addEventListener('pointermove', onMove);
-canvas.addEventListener('pointerup',   onUp);
-canvas.addEventListener('pointerleave', onUp);
-
-function onDown(e) {
-  e.preventDefault();
-  const pos = getPos(e);
-
-  if (S.mode === 'select') {
-    // find topmost hit object
-    let hit = null;
-    for (let i = S.objects.length - 1; i >= 0; i--) {
-      if (hitTest(S.objects[i], pos.x, pos.y)) { hit = S.objects[i]; break; }
+function onDown(e){
+  e.preventDefault(); const pos=getPos(e);
+  if(S.mode==='select'){
+    const obj=selObj();
+    if(obj){const hi=hitHandle(obj,pos.x,pos.y);
+      if(hi>=0){S.dragMode='handle';S.dragHandleIdx=hi;S.dragStart=pos;S.dragObjSnapshot=cloneObj(obj);canvas.setPointerCapture(e.pointerId);return;}
     }
-    if (hit) {
-      S.selectedId = hit.id;
-      S.isMoving = true;
-      S.moveObjId = hit.id;
-      S.moveStart = pos;
-      S.moveObjOrigin = cloneObj(hit);
-      hideObjActions();
-      canvas.setPointerCapture(e.pointerId);
-    } else {
-      S.selectedId = null;
-      hideObjActions();
-    }
-    render();
+    let hit=null;
+    for(let i=S.objects.length-1;i>=0;i--) if(hitTest(S.objects[i],pos.x,pos.y)){hit=S.objects[i];break;}
+    if(hit){S.selectedId=hit.id;S.dragMode='move';S.dragStart=pos;S.dragObjSnapshot=cloneObj(hit);hideObjActions();canvas.setPointerCapture(e.pointerId);render();}
+    else{S.selectedId=null;hideObjActions();render();}
     return;
   }
-
-  // draw mode
-  S.isDrawing = true;
-  S.drawStart = pos;
-  S.penPoints = [pos];
-  if (S.tool !== 'pen') {
-    S.snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  }
+  S.isDrawing=true;S.drawStart=pos;S.penPoints=[pos];
+  if(S.tool!=='pen') S.snapshot=ctx.getImageData(0,0,canvas.width,canvas.height);
   canvas.setPointerCapture(e.pointerId);
 }
-
-function onMove(e) {
-  e.preventDefault();
-  const pos = getPos(e);
-
-  if (S.isMoving) {
-    const dx = pos.x - S.moveStart.x;
-    const dy = pos.y - S.moveStart.y;
-    const obj = S.objects.find(o => o.id === S.moveObjId);
-    if (!obj) return;
-    // reset to origin then translate
-    Object.assign(obj, cloneObj(S.moveObjOrigin));
-    translateObj(obj, dx, dy);
-    render();
-    return;
+function onMove(e){
+  e.preventDefault(); const pos=getPos(e);
+  if(S.dragMode==='handle'){
+    const obj=selObj(); if(!obj)return;
+    Object.assign(obj,cloneObj(S.dragObjSnapshot));
+    applyHandleDrag(obj,S.dragHandleIdx,pos.x,pos.y);
+    if(obj.type==='line'||obj.type==='arrow') showAngle(lineAngle(obj.x1,obj.y1,obj.x2,obj.y2));
+    else hideAngle();
+    render(); return;
   }
-
-  if (!S.isDrawing) return;
-  const pos2 = pos;
-
-  if (S.tool === 'pen') {
-    // draw segment incrementally
-    const prev = S.penPoints[S.penPoints.length - 1];
-    ctxSetup(S.color, S.lineWidth);
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.beginPath(); ctx.moveTo(prev.x, prev.y); ctx.lineTo(pos2.x, pos2.y); ctx.stroke();
-    S.penPoints.push(pos2);
+  if(S.dragMode==='move'){
+    const obj=selObj(); if(!obj)return;
+    Object.assign(obj,cloneObj(S.dragObjSnapshot));
+    translateObj(obj,pos.x-S.dragStart.x,pos.y-S.dragStart.y);
+    render(); return;
+  }
+  if(!S.isDrawing)return;
+  if(S.tool==='pen'){
+    const prev=S.penPoints[S.penPoints.length-1];
+    ctxSetup(S.color,S.lineWidth);ctx.globalCompositeOperation='source-over';
+    ctx.beginPath();ctx.moveTo(prev.x,prev.y);ctx.lineTo(pos.x,pos.y);ctx.stroke();
+    S.penPoints.push(pos);
   } else {
-    ctx.putImageData(S.snapshot, 0, 0);
-    drawObjImmediate({ type: S.tool, x1: S.drawStart.x, y1: S.drawStart.y, x2: pos2.x, y2: pos2.y, color: S.color, lineWidth: S.lineWidth });
+    ctx.putImageData(S.snapshot,0,0);
+    drawObjImmediate({type:S.tool,x1:S.drawStart.x,y1:S.drawStart.y,x2:pos.x,y2:pos.y,color:S.color,lineWidth:S.lineWidth});
+    if(S.tool==='line'||S.tool==='arrow') showAngle(lineAngle(S.drawStart.x,S.drawStart.y,pos.x,pos.y));
+    else hideAngle();
   }
 }
-
-function onUp(e) {
-  if (S.isMoving) {
-    S.isMoving = false;
-    // show actions after move ends
-    const obj = S.objects.find(o => o.id === S.moveObjId);
-    if (obj) {
-      const pos = getPos(e.changedTouches ? { clientX: e.changedTouches[0].clientX, clientY: e.changedTouches[0].clientY } : e);
-      showObjActions(pos.x, pos.y);
-    }
-    render();
-    return;
+function onUp(e){
+  if(S.dragMode){
+    S.dragMode=null; hideAngle();
+    const obj=selObj();
+    if(obj){const pos=getPos(e);showObjActions(pos.x,pos.y);}
+    render(); scheduleSave(); return;
   }
-
-  if (!S.isDrawing) return;
-  S.isDrawing = false;
-
-  const src = e.changedTouches ? e.changedTouches[0] : e;
-  const rect = canvas.getBoundingClientRect();
-  const ex = src.clientX - rect.left, ey = src.clientY - rect.top;
-
+  if(!S.isDrawing)return;
+  S.isDrawing=false; hideAngle();
+  const src=e.changedTouches?e.changedTouches[0]:e;
+  const rect=canvas.getBoundingClientRect();
+  const ex=src.clientX-rect.left,ey=src.clientY-rect.top;
   let obj;
-  if (S.tool === 'pen') {
-    if (S.penPoints.length < 2) { render(); return; }
-    obj = { id: nextId++, type: 'pen', points: [...S.penPoints], color: S.color, lineWidth: S.lineWidth };
+  if(S.tool==='pen'){
+    if(S.penPoints.length<2){render();return;}
+    obj={id:nextId++,type:'pen',points:[...S.penPoints],color:S.color,lineWidth:S.lineWidth};
   } else {
-    obj = { id: nextId++, type: S.tool, x1: S.drawStart.x, y1: S.drawStart.y, x2: ex, y2: ey, color: S.color, lineWidth: S.lineWidth };
+    obj={id:nextId++,type:S.tool,x1:S.drawStart.x,y1:S.drawStart.y,x2:ex,y2:ey,color:S.color,lineWidth:S.lineWidth};
   }
-
-  S.objects.push(obj);
-  S.selectedId = obj.id;
-  showObjActions(ex, ey);
-
-  // 描画後は選択モードに自動で戻る
-  setMode('select');
+  S.objects.push(obj); S.selectedId=obj.id;
+  showObjActions(ex,ey); setMode('select'); scheduleSave();
 }
 
-// ════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 // RENDER
-// ════════════════════════════════════════════
-function render() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (const obj of S.objects) {
-    const selected = obj.id === S.selectedId;
-    drawObjImmediate(obj, selected);
-  }
+// ══════════════════════════════════════════════════════════
+function render(){
+  ctx.clearRect(0,0,canvas.width,canvas.height); ctx.setLineDash([]);
+  for(const obj of S.objects) drawObjImmediate(obj,obj.id===S.selectedId);
 }
-
-function drawObjImmediate(obj, selected = false) {
-  ctx.globalCompositeOperation = 'source-over';
-  ctxSetup(obj.color, obj.lineWidth);
-
-  if (selected) {
-    // glow outline
-    ctx.shadowColor = 'rgba(108,99,255,0.8)';
-    ctx.shadowBlur  = 12;
-  } else {
-    ctx.shadowColor = 'transparent';
-    ctx.shadowBlur  = 0;
+function drawObjImmediate(obj,selected=false){
+  ctx.globalCompositeOperation='source-over'; ctxSetup(obj.color,obj.lineWidth);
+  ctx.shadowColor=selected?'rgba(108,99,255,0.7)':'transparent';
+  ctx.shadowBlur=selected?10:0; ctx.setLineDash([]);
+  if(obj.type==='pen'){
+    if(obj.points.length<2)return;
+    ctx.beginPath();ctx.moveTo(obj.points[0].x,obj.points[0].y);
+    for(let i=1;i<obj.points.length;i++)ctx.lineTo(obj.points[i].x,obj.points[i].y);ctx.stroke();
+  } else if(obj.type==='line'){
+    ctx.beginPath();ctx.moveTo(obj.x1,obj.y1);ctx.lineTo(obj.x2,obj.y2);ctx.stroke();
+  } else if(obj.type==='rect'){
+    ctx.strokeRect(obj.x1,obj.y1,obj.x2-obj.x1,obj.y2-obj.y1);
+  } else if(obj.type==='circle'){
+    const cx=(obj.x1+obj.x2)/2,cy=(obj.y1+obj.y2)/2,rx=Math.abs(obj.x2-obj.x1)/2,ry=Math.abs(obj.y2-obj.y1)/2;
+    if(rx<1||ry<1)return;
+    ctx.beginPath();ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);ctx.stroke();
+  } else if(obj.type==='arrow'){
+    drawArrowShape(obj.x1,obj.y1,obj.x2,obj.y2,obj.lineWidth,obj.color);
   }
-
-  if (obj.type === 'pen') {
-    if (obj.points.length < 2) return;
-    ctx.beginPath();
-    ctx.moveTo(obj.points[0].x, obj.points[0].y);
-    for (let i = 1; i < obj.points.length; i++) ctx.lineTo(obj.points[i].x, obj.points[i].y);
-    ctx.stroke();
-  } else if (obj.type === 'line') {
-    ctx.beginPath(); ctx.moveTo(obj.x1,obj.y1); ctx.lineTo(obj.x2,obj.y2); ctx.stroke();
-  } else if (obj.type === 'rect') {
-    ctx.strokeRect(obj.x1, obj.y1, obj.x2-obj.x1, obj.y2-obj.y1);
-  } else if (obj.type === 'circle') {
-    const cx=(obj.x1+obj.x2)/2, cy=(obj.y1+obj.y2)/2;
-    const rx=Math.abs(obj.x2-obj.x1)/2, ry=Math.abs(obj.y2-obj.y1)/2;
-    if (rx<1||ry<1) return;
-    ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.stroke();
-  } else if (obj.type === 'arrow') {
-    drawArrow(obj.x1,obj.y1,obj.x2,obj.y2,obj.lineWidth,obj.color);
-  }
-
-  ctx.shadowBlur = 0;
-
-  // selection handles
-  if (selected) {
-    drawSelectionBox(obj);
-  }
+  ctx.shadowBlur=0;
+  if(selected) drawHandles(obj);
 }
-
-function drawSelectionBox(obj) {
-  const bb = getBoundingBox(obj);
-  if (!bb) return;
-  const pad = 8;
-  ctx.shadowBlur = 0;
-  ctx.strokeStyle = 'rgba(108,99,255,0.9)';
-  ctx.lineWidth = 1.5;
-  ctx.setLineDash([5, 4]);
-  ctx.strokeRect(bb.x - pad, bb.y - pad, bb.w + pad*2, bb.h + pad*2);
+function drawHandles(obj){
+  const hs=getHandles(obj);
   ctx.setLineDash([]);
+  const bb=getBBox(obj);
+  if(bb){ctx.strokeStyle='rgba(108,99,255,0.6)';ctx.lineWidth=1;ctx.setLineDash([4,3]);ctx.strokeRect(bb.x-8,bb.y-8,bb.w+16,bb.h+16);ctx.setLineDash([]);}
+  hs.forEach(h=>{ctx.beginPath();ctx.arc(h.x,h.y,HANDLE_R,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#6c63ff';ctx.lineWidth=2.5;ctx.stroke();});
+}
+function getBBox(obj){
+  if(obj.type==='pen'){if(!obj.points.length)return null;
+    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+    for(const p of obj.points){minX=Math.min(minX,p.x);minY=Math.min(minY,p.y);maxX=Math.max(maxX,p.x);maxY=Math.max(maxY,p.y);}
+    return{x:minX,y:minY,w:maxX-minX,h:maxY-minY};}
+  return{x:Math.min(obj.x1,obj.x2),y:Math.min(obj.y1,obj.y2),w:Math.abs(obj.x2-obj.x1),h:Math.abs(obj.y2-obj.y1)};
+}
+function ctxSetup(color,lw){ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=lw;ctx.lineCap='round';ctx.lineJoin='round';}
+function drawArrowShape(x1,y1,x2,y2,lw,color){
+  const angle=Math.atan2(y2-y1,x2-x1),h=Math.max(lw*5,16);
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-h*Math.cos(angle-0.4),y2-h*Math.sin(angle-0.4));
+  ctx.lineTo(x2-h*Math.cos(angle+0.4),y2-h*Math.sin(angle+0.4));
+  ctx.closePath();ctx.fillStyle=color;ctx.fill();
 }
 
-function getBoundingBox(obj) {
-  if (obj.type === 'pen') {
-    if (obj.points.length === 0) return null;
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const p of obj.points) {
-      minX = Math.min(minX, p.x); minY = Math.min(minY, p.y);
-      maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y);
-    }
-    return { x: minX, y: minY, w: maxX-minX, h: maxY-minY };
-  }
-  const minX = Math.min(obj.x1,obj.x2), minY = Math.min(obj.y1,obj.y2);
-  const maxX = Math.max(obj.x1,obj.x2), maxY = Math.max(obj.y1,obj.y2);
-  return { x: minX, y: minY, w: maxX-minX, h: maxY-minY };
-}
-
-function ctxSetup(color, lw) {
-  ctx.strokeStyle = color;
-  ctx.fillStyle   = color;
-  ctx.lineWidth   = lw;
-  ctx.lineCap     = 'round';
-  ctx.lineJoin    = 'round';
-}
-
-function drawArrow(x1,y1,x2,y2,lw,color) {
-  const angle = Math.atan2(y2-y1,x2-x1), h = Math.max(lw*5,16);
-  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(x2,y2);
-  ctx.lineTo(x2-h*Math.cos(angle-0.4), y2-h*Math.sin(angle-0.4));
-  ctx.lineTo(x2-h*Math.cos(angle+0.4), y2-h*Math.sin(angle+0.4));
-  ctx.closePath();
-  ctx.fillStyle = color; ctx.fill();
-}
-
-// ════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 // FILM STRIP
-// ════════════════════════════════════════════
-const FRAME_W = 48, FRAME_H = 38, TOTAL_FRAMES = 30;
-let filmBuilt = false, filmFrameEls = [];
-
-function buildFilmStrip() {
-  if (filmBuilt) return;
-  filmBuilt = true;
-  filmStrip.innerHTML = '';
-  filmFrameEls = [];
-  for (let i = 0; i < TOTAL_FRAMES; i++) {
-    const div = document.createElement('div');
-    div.className = 'film-frame';
-    const c = document.createElement('canvas');
-    c.width = FRAME_W; c.height = FRAME_H;
-    div.appendChild(c); filmStrip.appendChild(div);
-    filmFrameEls.push(c);
+// ══════════════════════════════════════════════════════════
+const FRAME_W=48,FRAME_H=38,TOTAL_FRAMES=30;
+function buildFilmStrip(){
+  if(filmBuilt)return; filmBuilt=true;
+  filmStrip.innerHTML=''; filmFrameEls=[];
+  for(let i=0;i<TOTAL_FRAMES;i++){
+    const div=document.createElement('div');div.className='film-frame';
+    const c=document.createElement('canvas');c.width=FRAME_W;c.height=FRAME_H;
+    div.appendChild(c);filmStrip.appendChild(div);filmFrameEls.push(c);
   }
-  filmStrip.style.width = (FRAME_W * TOTAL_FRAMES) + 'px';
+  filmStrip.style.width=(FRAME_W*TOTAL_FRAMES)+'px';
   captureFrames();
 }
-
-async function captureFrames() {
-  const dur = videoEl.duration;
-  if (!isFinite(dur) || dur === 0) return;
-  const ov = document.createElement('video');
-  ov.src = videoEl.src; ov.muted = true; ov.preload = 'auto';
-  await new Promise(r => { ov.addEventListener('loadedmetadata', r, {once:true}); ov.load(); });
-  for (let i = 0; i < TOTAL_FRAMES; i++) {
-    ov.currentTime = (i / (TOTAL_FRAMES-1)) * dur;
-    await new Promise(r => ov.addEventListener('seeked', r, {once:true}));
-    const c = filmFrameEls[i];
-    const cx = c.getContext('2d');
-    const scale = Math.min(FRAME_W/ov.videoWidth, FRAME_H/ov.videoHeight);
-    const dw=ov.videoWidth*scale, dh=ov.videoHeight*scale;
-    cx.fillStyle='#111'; cx.fillRect(0,0,FRAME_W,FRAME_H);
+async function captureFrames(){
+  const dur=videoEl.duration; if(!isFinite(dur)||dur===0)return;
+  const ov=document.createElement('video');ov.src=videoEl.src;ov.muted=true;ov.preload='auto';
+  await new Promise(r=>{ov.addEventListener('loadedmetadata',r,{once:true});ov.load();});
+  for(let i=0;i<TOTAL_FRAMES;i++){
+    ov.currentTime=(i/(TOTAL_FRAMES-1))*dur;
+    await new Promise(r=>ov.addEventListener('seeked',r,{once:true}));
+    const c=filmFrameEls[i],cx=c.getContext('2d');
+    const scale=Math.min(FRAME_W/ov.videoWidth,FRAME_H/ov.videoHeight);
+    const dw=ov.videoWidth*scale,dh=ov.videoHeight*scale;
+    cx.fillStyle='#111';cx.fillRect(0,0,FRAME_W,FRAME_H);
     cx.drawImage(ov,(FRAME_W-dw)/2,(FRAME_H-dh)/2,dw,dh);
   }
 }
-
-function updateTimeline() {
-  const t = videoEl.currentTime, dur = videoEl.duration||1;
-  timeLabel.textContent = fmt(t) + ' / ' + fmt(dur);
-  if (!tlDragging) filmStrip.style.transform = `translateX(${timeToOffset(t)}px)`;
+function updateTimeline(){
+  const t=videoEl.currentTime,dur=videoEl.duration||1;
+  timeLabel.textContent=fmt(t)+' / '+fmt(dur);
+  if(!tlDragging) filmStrip.style.transform=`translateX(${timeToOffset(t)}px)`;
 }
-
-function timeToOffset(t) {
-  const dur = videoEl.duration||1;
-  const ww = timelineWrap.getBoundingClientRect().width||200;
-  return -((t/dur)*(FRAME_W*TOTAL_FRAMES) - ww/2);
+function timeToOffset(t){
+  const dur=videoEl.duration||1,ww=timelineWrap.getBoundingClientRect().width||200;
+  return-((t/dur)*(FRAME_W*TOTAL_FRAMES)-ww/2);
 }
-
-let tlDragging=false, tlStartX=0, tlStartTime=0;
-timelineWrap.addEventListener('pointerdown', e => {
-  tlDragging=true; tlStartX=e.clientX; tlStartTime=videoEl.currentTime;
-  timelineWrap.setPointerCapture(e.pointerId);
-  videoEl.pause(); e.preventDefault();
-});
-timelineWrap.addEventListener('pointermove', e => {
-  if(!tlDragging) return;
-  const dx=e.clientX-tlStartX, dur=videoEl.duration||1;
-  const newT=Math.max(0,Math.min(dur, tlStartTime-(dx/(FRAME_W*TOTAL_FRAMES))*dur));
-  videoEl.currentTime=newT;
-  filmStrip.style.transform=`translateX(${timeToOffset(newT)}px)`;
+let tlDragging=false,tlStartX=0,tlStartTime=0;
+timelineWrap.addEventListener('pointerdown',e=>{tlDragging=true;tlStartX=e.clientX;tlStartTime=videoEl.currentTime;timelineWrap.setPointerCapture(e.pointerId);videoEl.pause();e.preventDefault();});
+timelineWrap.addEventListener('pointermove',e=>{
+  if(!tlDragging)return;
+  const dx=e.clientX-tlStartX,dur=videoEl.duration||1;
+  const newT=Math.max(0,Math.min(dur,tlStartTime-(dx/(FRAME_W*TOTAL_FRAMES))*dur));
+  videoEl.currentTime=newT;filmStrip.style.transform=`translateX(${timeToOffset(newT)}px)`;
   timeLabel.textContent=fmt(newT)+' / '+fmt(dur);
 });
-timelineWrap.addEventListener('pointerup',    ()=>{ tlDragging=false; });
-timelineWrap.addEventListener('pointerleave', ()=>{ tlDragging=false; });
-timelineWrap.addEventListener('touchstart', e=>e.preventDefault(),{passive:false});
-timelineWrap.addEventListener('touchmove',  e=>e.preventDefault(),{passive:false});
+timelineWrap.addEventListener('pointerup',   ()=>{tlDragging=false;});
+timelineWrap.addEventListener('pointerleave',()=>{tlDragging=false;});
+timelineWrap.addEventListener('touchstart',e=>e.preventDefault(),{passive:false});
+timelineWrap.addEventListener('touchmove', e=>e.preventDefault(),{passive:false});
+
+// ══════════════════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════════════════
+let exportCancelled = false;
+exportCancel.addEventListener('click', () => { exportCancelled = true; });
+
+exportBtn.addEventListener('click', async () => {
+  if (!videoBlob) return;
+  exportCancelled = false;
+  exportOverlay.classList.add('show');
+  exportStatus.textContent = '動画を合成中...';
+  exportBar.style.width = '0%';
+  exportBtn.disabled = true;
+
+  try {
+    await exportVideo();
+  } catch(err) {
+    if (!exportCancelled) alert('エクスポートに失敗しました: ' + err.message);
+  } finally {
+    exportOverlay.classList.remove('show');
+    exportBtn.disabled = false;
+  }
+});
+
+async function exportVideo() {
+  // Offscreen video for frame-by-frame render
+  const src = URL.createObjectURL(videoBlob);
+  const ov = document.createElement('video');
+  ov.src = src; ov.muted = true; ov.preload = 'auto';
+  await new Promise(r => { ov.addEventListener('loadedmetadata', r, {once:true}); ov.load(); });
+
+  const VW = ov.videoWidth, VH = ov.videoHeight;
+  const dur = ov.duration;
+  const FPS = 30;
+  const totalFrames = Math.ceil(dur * FPS);
+
+  // Offscreen canvas same size as video
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = VW; offCanvas.height = VH;
+  const offCtx = offCanvas.getContext('2d');
+
+  // Scale factor: canvas coords → video native coords
+  const scaleX = VW / canvas.width;
+  const scaleY = VH / canvas.height;
+
+  // Setup MediaRecorder
+  let mimeType = 'video/webm;codecs=vp9';
+  if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm;codecs=vp8';
+  if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
+  if (!MediaRecorder.isTypeSupported(mimeType)) {
+    throw new Error('お使いのブラウザは動画出力に対応していません（Safari非対応）。ChromeまたはFirefoxをお使いください。');
+  }
+
+  const stream = offCanvas.captureStream(FPS);
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
+  const chunks = [];
+  recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+
+  recorder.start();
+
+  for (let f = 0; f < totalFrames; f++) {
+    if (exportCancelled) { recorder.stop(); URL.revokeObjectURL(src); return; }
+
+    const t = f / FPS;
+    ov.currentTime = t;
+    await new Promise(r => ov.addEventListener('seeked', r, {once:true}));
+
+    // Draw video frame
+    offCtx.drawImage(ov, 0, 0, VW, VH);
+
+    // Draw annotations scaled up to native video resolution
+    offCtx.save();
+    offCtx.scale(scaleX, scaleY);
+    for (const obj of S.objects) {
+      drawObjOnCtx(offCtx, obj);
+    }
+    offCtx.restore();
+
+    // Progress
+    exportBar.style.width = ((f+1)/totalFrames*100).toFixed(1) + '%';
+    exportStatus.textContent = `合成中… ${f+1} / ${totalFrames} フレーム`;
+
+    // Yield to browser
+    await new Promise(r => setTimeout(r, 0));
+  }
+
+  recorder.stop();
+  await new Promise(r => recorder.addEventListener('stop', r, {once:true}));
+  URL.revokeObjectURL(src);
+
+  if (exportCancelled) return;
+
+  exportStatus.textContent = 'ファイルを保存中...';
+  const blob = new Blob(chunks, { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+  a.download = (projectNameIn.value || '動画ドロー') + '_annotated.' + ext;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+}
+
+// Draw object on arbitrary context (for export)
+function drawObjOnCtx(c, obj) {
+  c.globalCompositeOperation = 'source-over';
+  c.strokeStyle = obj.color; c.fillStyle = obj.color;
+  c.lineWidth = obj.lineWidth; c.lineCap = 'round'; c.lineJoin = 'round';
+  c.setLineDash([]);
+
+  if (obj.type==='pen') {
+    if (obj.points.length < 2) return;
+    c.beginPath(); c.moveTo(obj.points[0].x, obj.points[0].y);
+    for (let i=1; i<obj.points.length; i++) c.lineTo(obj.points[i].x, obj.points[i].y);
+    c.stroke();
+  } else if (obj.type==='line') {
+    c.beginPath(); c.moveTo(obj.x1,obj.y1); c.lineTo(obj.x2,obj.y2); c.stroke();
+  } else if (obj.type==='rect') {
+    c.strokeRect(obj.x1,obj.y1,obj.x2-obj.x1,obj.y2-obj.y1);
+  } else if (obj.type==='circle') {
+    const cx=(obj.x1+obj.x2)/2,cy=(obj.y1+obj.y2)/2,rx=Math.abs(obj.x2-obj.x1)/2,ry=Math.abs(obj.y2-obj.y1)/2;
+    if(rx<1||ry<1)return;
+    c.beginPath(); c.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); c.stroke();
+  } else if (obj.type==='arrow') {
+    const angle=Math.atan2(obj.y2-obj.y1,obj.x2-obj.x1),h=Math.max(obj.lineWidth*5,16);
+    c.beginPath(); c.moveTo(obj.x1,obj.y1); c.lineTo(obj.x2,obj.y2); c.stroke();
+    c.beginPath(); c.moveTo(obj.x2,obj.y2);
+    c.lineTo(obj.x2-h*Math.cos(angle-0.4),obj.y2-h*Math.sin(angle-0.4));
+    c.lineTo(obj.x2-h*Math.cos(angle+0.4),obj.y2-h*Math.sin(angle+0.4));
+    c.closePath(); c.fill();
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════
+openDB().then(() => renderProjectList());
 </script>
 </body>
 </html>
